@@ -1,4 +1,4 @@
-# The Met benchmark, extended — synthetic gallery photos + a geometric re-rank
+# The Met benchmark, extended with synthetic gallery photos
 
 Research fork of [nikosips/met](https://github.com/nikosips/met), the official code of
 **"The Met Dataset: Instance-level Recognition for Artworks"** (NeurIPS 2021), being extended for a
@@ -7,45 +7,65 @@ which of **~224k museum-exhibit classes** it shows — or correctly reject it as
 collection. Its core difficulty is the **distribution shift** between clean studio training photos
 and real visitor photos, plus a long tail (60.8% of classes have a single training image).
 
-We keep the task, metrics, and evaluation protocol **unchanged** — every number below is directly
-comparable to the original paper — and add two contributions on top:
+**Our contribution is a synthetic dataset of visitor-style gallery photos** — 24,760 Blender
+renders of 4,952 Met paintings hung in a virtual gallery — and the finding that simply **adding it
+to the training set beats the paper's best single model**, with the task, metrics, training recipe,
+and evaluation protocol left completely **unchanged**. The renders attack both difficulties
+directly: they look like visitor photos (perspective, frame, glass, gallery lighting), and they
+give single-image classes extra views.
 
-1. **A synthetic dataset of visitor-style gallery photos.** 24,760 Blender renders of 4,952 Met
-   paintings hung in a virtual gallery. Adding it to training **beats the paper's best single model
-   with no method changes**.
-2. **A new retrieval method** (in progress): a frozen **DINOv3** backbone with a **geometric
-   re-rank** that fixes its weak spot — distractor rejection.
-
-![GAP progression: paper 36.1 → +synthetic 38.15 → DINOv3+re-rank 53.07](experiments/dinov3-backbone/figures/progression.png)
+![Same recipe + synthetic data: every metric improves](experiments/training-with-synthetic/figures/baseline_vs_synth.png)
 
 ## Results so far
 
 Full benchmark: 397k-image database, 19,319 test queries (1,003 real + 18,316 distractors),
 multi-scale descriptors, kNN classifier with K and τ tuned on the validation set over the full
 grid. **GAP / GAP⁻ / ACC are defined once in [`experiments/README.md`](experiments/README.md)**;
-GAP (open-set, distractors included) is the headline metric.
+GAP (open-set, distractors included) is the headline metric. The two right columns score only the
+**148 painting test queries** — the classes the synthetic data covers — on the same full database.
 
-| Model | GAP | GAP⁻ | ACC | Write-up |
-|---|--:|--:|--:|---|
-| Paper's best single model (R18-SWSL Con-Syn+Real-closest) | 36.1 | 52.4 | 55.0 | [`reference/`](reference/README.md) |
-| Our from-scratch reproduction of it | 35.97 | 52.14 | 54.64 | [`training-with-synthetic`](experiments/training-with-synthetic/README.md) |
-| **+ our synthetic data** (same recipe, clean A/B) | **38.15** | 55.49 | 58.23 | [`training-with-synthetic`](experiments/training-with-synthetic/README.md) |
-| DINOv3 ViT-L, frozen, zero-shot kNN | 48.16 | 72.14 | 77.07 | [`dinov3-backbone`](experiments/dinov3-backbone/README.md) |
-| **DINOv3 ViT-L + our geometric re-rank** | **53.07** | 74.69 | 77.07 | [`dinov3-backbone`](experiments/dinov3-backbone/README.md) |
+| Model | GAP | GAP⁻ | ACC | Paint GAP⁻ (148 q) | Paint ACC (148 q) |
+|---|--:|--:|--:|--:|--:|
+| Paper's best single model (R18-SWSL Con-Syn+Real-closest) | 36.1 | 52.4 | 55.0 | — | — |
+| Our from-scratch reproduction of it | 35.97 | 52.14 | 54.64 | 67.86 | 69.59 |
+| **+ our synthetic data** (identical recipe, clean A/B) | **38.15** | **55.49** | **58.23** | **70.41** | **72.30** |
 
-DINOv3's zero-shot strength on Met is the DINOv3 paper's own result; our delta is the re-rank on
-top — **+4.9 GAP and +2.6 GAP⁻ at unchanged accuracy**, i.e. pure distractor rejection.
+The only change between the last two rows is adding the renders to the training set — no new
+method, no extra real data. Main write-up:
+[`experiments/training-with-synthetic/`](experiments/training-with-synthetic/README.md).
+Supporting experiments:
+
+- [`renders-as-queries`](experiments/renders-as-queries/README.md) — can the baseline model (trained
+  on real data only) recognize the renders at all? Yes for well-framed views — and this exposed the
+  camera-rig framing bug below.
+- [`real-vs-synthetic-mix`](experiments/real-vs-synthetic-mix/README.md) — how the real↔synthetic
+  training mix and the amount of synthetic data move painting recognition.
+- [`phone-photo-augmentation`](experiments/phone-photo-augmentation/README.md) — simulated
+  phone-camera artifacts (JPEG / blur / noise) as training augmentation: a clean negative result.
 
 Current status, all experiments, and every number live in **[`EXPERIMENTS.md`](EXPERIMENTS.md)**
 (the running lab notebook) and **[`experiments/`](experiments/README.md)** (per-experiment
 write-ups).
+
+## The synthetic dataset
+
+**24,760 images = 4,952 Met paintings × 5 gallery viewpoints**, rendered with Blender/Cycles: each
+painting hung as a framed, glass-covered canvas with a placard, with randomized lighting, floor
+material, and camera pose. Folders map to Met class ids via their `metadata.json`, and the renders
+cover **all 148 painting test queries** of the benchmark.
+[`scripts/build_finetune_data.py`](scripts/build_finetune_data.py) builds the augmented training
+manifests (`data/gt_aug`, `data/gt_synth`) consumed by the training runs.
+
+On the cluster it lives at `/mnt/storage_6/project_data/pl0896-03/visart-dataset/` (~8.8 GB, not
+yet public). ⚠️ Known issue: one of the five camera rigs (`right upper`) frames paintings poorly
+([`EXPERIMENTS.md`](EXPERIMENTS.md) → EXP-3); a rig fix + regeneration is planned.
 
 ## Repository map
 
 | Path | What |
 |---|---|
 | [`code/`](code/) | The upstream pipeline — contrastive training → descriptor extraction → kNN eval — lightly patched (CPU faiss on H100, torch 2.8 checkpoint loading) |
-| [`scripts/`](scripts/) | This fork's tooling: [`eval_fullgrid.py`](scripts/eval_fullgrid.py) (the canonical full-K×τ-grid eval), [`build_finetune_data.py`](scripts/build_finetune_data.py) (wires synthetic data into training), painting-subset evals, the DINOv3 + re-rank pipeline |
+| [`scripts/`](scripts/) | This fork's tooling: [`eval_fullgrid.py`](scripts/eval_fullgrid.py) (the canonical full-K×τ-grid eval), [`build_finetune_data.py`](scripts/build_finetune_data.py) (wires synthetic data into training), painting-subset and synthetic-retrieval evals |
 | [`slurm/`](slurm/) | Batch jobs for the PCSS Eagle cluster — [`train.slurm`](slurm/train.slurm) reproduces the paper's best model |
 | [`experiments/`](experiments/README.md) | Per-experiment write-ups; its README defines the task and the metrics once |
 | [`EXPERIMENTS.md`](EXPERIMENTS.md) | Running lab notebook: status snapshot, exact commands, job ids, all results |
@@ -68,6 +88,9 @@ sbatch slurm/train.slurm
     --net r18_sw-sup --pretrained --pairs_type new_pos+new_neg --emb_proj --pca \
     --seed 0 --info_dir ./data/ground_truth --im_root ./data/ --gpuid 0
 
+# 1b) The same recipe WITH the synthetic data (after scripts/build_finetune_data.py)
+#     --info_dir data/gt_aug --im_root data/aug   → see slurm/train_synth.slurm
+
 # 2) Extract multi-scale descriptors from a checkpoint
 .venv/bin/python -m code.examples.extract_descriptors ./data/descriptors \
     --net r18_contr_loss_gem_fc_swsl --netpath ./data/models/<checkpoint> --ms \
@@ -84,19 +107,6 @@ sbatch slurm/train.slurm
 The Met dataset itself comes from the [official webpage](http://cmp.felk.cvut.cz/met/) and is wired
 in via the git-ignored `data/images` / `data/ground_truth` symlinks — [`CLAUDE.md`](CLAUDE.md) →
 Dataset documents the layout and the `images/` path gotcha.
-
-## The synthetic dataset
-
-**24,760 images = 4,952 Met paintings × 5 gallery viewpoints**, rendered with Blender/Cycles: each
-painting hung as a framed, glass-covered canvas with a placard, with randomized lighting, floor
-material, and camera pose. Folders map to Met class ids via their `metadata.json`, and the renders
-cover **all 148 painting test queries** of the benchmark.
-[`scripts/build_finetune_data.py`](scripts/build_finetune_data.py) builds the augmented training
-manifests (`data/gt_aug`, `data/gt_synth`) consumed by the training runs.
-
-On the cluster it lives at `/mnt/storage_6/project_data/pl0896-03/visart-dataset/` (~8.8 GB, not
-yet public). ⚠️ Known issue: one of the five camera rigs (`right upper`) frames paintings poorly
-([`EXPERIMENTS.md`](EXPERIMENTS.md) → EXP-3); a rig fix + regeneration is planned.
 
 ## Upstream & citation
 

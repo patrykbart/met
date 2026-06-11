@@ -137,7 +137,7 @@ def main():
     ang_idx = {a: i for i, a in enumerate(angles)}
     n_missing_id = sum(r["met_id"] is None for r in recs)
     n_missing_file = sum(not os.path.isfile(r["path"]) for r in recs)
-    print(f"records: {n}  (folders x {len(ANGLES)} angles)", flush=True)
+    print(f"records: {n}  (folders x {len(angles)} angles)", flush=True)
     print(f"floors: {floors}", flush=True)
     print(f"missing met_id: {n_missing_id} | missing files: {n_missing_file}", flush=True)
     assert n_missing_id == 0, "some folders have no recoverable met_id"

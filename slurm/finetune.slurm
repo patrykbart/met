@@ -1,7 +1,9 @@
 #!/bin/bash
 # Fine-tune the step-1 model (epoch 10) with synthetic gallery data, LR 1e-7.
-# usage: sbatch --job-name=met-ft-combined slurm/finetune.slurm combined
-#        sbatch --job-name=met-ft-synth    slurm/finetune.slurm synth
+# usage: sbatch --job-name=met-ft-combined slurm/finetune.slurm combined [suffix]
+#        sbatch --job-name=met-ft-synth    slurm/finetune.slurm synth    [suffix]
+# suffix (e.g. _v2) selects data/gt_{aug,synth}<suffix> + data/aug<suffix> and writes
+# data/models/r18SWSL_ft_<variant><suffix>; empty suffix = the original v1 run.
 #SBATCH --account=pl0896-03
 #SBATCH --partition=tesla
 #SBATCH --gres=gpu:h100:1
@@ -10,10 +12,11 @@
 #SBATCH --time=1-12:00:00
 #SBATCH --output=logs/%x-%j.out
 
-VARIANT="${1:?usage: sbatch slurm/finetune.slurm <combined|synth>}"
+VARIANT="${1:?usage: sbatch slurm/finetune.slurm <combined|synth> [suffix]}"
+SUF="${2:-}"
 case "$VARIANT" in
-  combined) INFO=data/gt_aug;   OUT=data/models/r18SWSL_ft_combined ;;
-  synth)    INFO=data/gt_synth; OUT=data/models/r18SWSL_ft_synth ;;
+  combined) INFO=data/gt_aug$SUF;   OUT=data/models/r18SWSL_ft_combined$SUF ;;
+  synth)    INFO=data/gt_synth$SUF; OUT=data/models/r18SWSL_ft_synth$SUF ;;
   *) echo "unknown variant: $VARIANT"; exit 1 ;;
 esac
 
@@ -29,5 +32,5 @@ nvidia-smi --query-gpu=name --format=csv,noheader
     --net r18_sw-sup --pretrained --init_weights "$CKPT" \
     --pairs_type new_pos+new_neg --emb_proj --pca \
     --backbone_lr 1e-7 --epochs 5 --sched_step 3 --seed 0 \
-    --info_dir "$INFO" --im_root data/aug --gpuid 0
+    --info_dir "$INFO" --im_root data/aug$SUF --gpuid 0
 echo "end=$(date)"

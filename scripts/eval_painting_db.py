@@ -9,6 +9,7 @@ present in the painting DB) and the 148 real painting test queries; reports GAP 
 recall@1/5/10. ACC == R@1 by construction (tau=50 vote follows the nearest neighbour).
 
 CPU-only; run via SLURM, not the login node.
+Env override (default = v1): SYNTH_OUT = dir with synth_descriptors.pkl (also gets the summary json).
 """
 import os, sys, csv, json, pickle
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE); sys.path.insert(0, REPO)
@@ -18,8 +19,9 @@ from code.classifiers.knn_classifier import KNN_Classifier
 K, TAU, DIM = 7, 50.0, 512
 
 INFO = os.path.join(REPO, "data/ground_truth")
+SYNDIR = os.path.join(REPO, os.environ.get("SYNTH_OUT", "data/descriptors/synthetic"))
 DB   = os.path.join(REPO, "data/descriptors/r18_contr_loss_gem_fc_swsl_ms/descriptors.pkl")
-SYN  = os.path.join(REPO, "data/descriptors/synthetic/synth_descriptors.pkl")
+SYN  = os.path.join(SYNDIR, "synth_descriptors.pkl")
 CSVF = os.path.join(REPO, "data/MetObjects.csv")
 
 # committed painting class set: Classification == "Paintings"
@@ -97,5 +99,5 @@ out = {"K": K, "tau": TAU, "db_imgs": int(len(pdb_labels)), "db_classes": int(le
 for a in sorted(set(angles.tolist())):
     am = angles == a
     out["synthetic"][a] = score(sp[am], sc[am], mids[am], synd[am], f"synthetic {a}")
-json.dump(out, open(os.path.join(REPO, "data/descriptors/synthetic/painting_db_summary.json"), "w"), indent=2)
-print("\nsaved data/descriptors/synthetic/painting_db_summary.json", flush=True)
+json.dump(out, open(os.path.join(SYNDIR, "painting_db_summary.json"), "w"), indent=2)
+print(f"\nsaved {os.path.join(SYNDIR, 'painting_db_summary.json')}", flush=True)

@@ -11,10 +11,18 @@ point is the existing data/gt_paint (no manifest needed here).
 Train each with:  --im_root data/aug  --info_dir data/gt_paint_mix_<tag>
 (real paths MET/.. and synth paths SYNTH/.. both resolve under data/aug/images).
 stdlib only; login-node safe.  Run: .venv/bin/python scripts/build_paintings_mix_data.py
+
+For another dataset version, pass --syn and --suffix (defaults reproduce the v1 layout), e.g.:
+  --syn .../visart-dataset-v2 --suffix _v2  ->  data/gt_paint_mix_<tag>_v2, data/gt_paint_synth*_v2
+(train those with --im_root data/aug_v2, built by build_finetune_data.py --suffix _v2)
 """
-import os, re, glob, json, random
+import os, re, glob, json, random, argparse
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE)
-SYN = "/mnt/storage_6/project_data/pl0896-03/visart-dataset"
+ap = argparse.ArgumentParser()
+ap.add_argument("--syn", default="/mnt/storage_6/project_data/pl0896-03/visart-dataset")
+ap.add_argument("--suffix", default="", help="appended to every output manifest dir")
+args = ap.parse_args()
+SYN, SUF = args.syn, args.suffix
 GT_PAINT = os.path.join(REPO, "data/gt_paint")
 TOTAL = 12403
 RATIOS = [(80, 20), (60, 40), (40, 60), (20, 80), (0, 100)]
@@ -28,7 +36,7 @@ for folder in sorted((f for f in os.listdir(SYN) if os.path.isdir(os.path.join(S
     mfile = os.path.join(SYN, folder, "metadata.json")
     if not os.path.exists(mfile):
         continue
-    m = re.search(r'MET/(\d+)/0\.jpg', open(mfile).read())
+    m = re.search(r'MET/(\d+)/\d+\.jpg', open(mfile).read())
     if not m or int(m.group(1)) not in paint_ids:
         continue
     mid = int(m.group(1))
@@ -49,13 +57,13 @@ for r, s in RATIOS:
     n_real = round(r / 100 * TOTAL); n_synth = TOTAL - n_real
     entries = real_pool[:n_real] + synth_pool[:n_synth]
     tag = f"{r}r{s}s"
-    out = os.path.join(REPO, f"data/gt_paint_mix_{tag}"); os.makedirs(out, exist_ok=True)
+    out = os.path.join(REPO, f"data/gt_paint_mix_{tag}{SUF}"); os.makedirs(out, exist_ok=True)
     json.dump(entries, open(os.path.join(out, "MET_database.json"), "w"))
     for j in ("valset.json", "testset.json"):
         link(os.path.join(GT_PAINT, j), os.path.join(out, j))
     n_cls = len({e["id"] for e in entries})
     print(f"  {tag:>8}: real {n_real:>6,} + synth {n_synth:>6,} = {len(entries):,} imgs / {n_cls:,} classes "
-          f"-> data/gt_paint_mix_{tag}")
+          f"-> data/gt_paint_mix_{tag}{SUF}")
 
 # Synth-only DATA-SCALING runs (beyond the fixed 12,403 budget): 0% real, longer prefixes of the
 # SAME shuffled synth_pool -> nested supersets of the 0r100s (1x) set. 200% (24,806) exceeds the
@@ -65,12 +73,12 @@ SCALE = [("synth125", round(1.25 * TOTAL)), ("synth150", round(1.50 * TOTAL)), (
 for tag, n in SCALE:
     n = min(n, len(synth_pool))
     entries = synth_pool[:n]                                  # 0% real
-    out = os.path.join(REPO, f"data/gt_paint_{tag}"); os.makedirs(out, exist_ok=True)
+    out = os.path.join(REPO, f"data/gt_paint_{tag}{SUF}"); os.makedirs(out, exist_ok=True)
     json.dump(entries, open(os.path.join(out, "MET_database.json"), "w"))
     for j in ("valset.json", "testset.json"):
         link(os.path.join(GT_PAINT, j), os.path.join(out, j))
     n_cls = len({e["id"] for e in entries})
-    print(f"  {tag:>9}: synth {n:>6,} imgs (x{n / TOTAL:.2f} budget) / {n_cls:,} classes -> data/gt_paint_{tag}")
+    print(f"  {tag:>9}: synth {n:>6,} imgs (x{n / TOTAL:.2f} budget) / {n_cls:,} classes -> data/gt_paint_{tag}{SUF}")
 
-print("\ntrain mix:     sbatch --job-name=met-tr-<tag> slurm/paint_train.slurm data/gt_paint_mix_<tag> data/aug paint_<tag>")
-print("train scaling: sbatch --job-name=met-tr-<tag> slurm/paint_train.slurm data/gt_paint_<tag>     data/aug paint_<tag>")
+print(f"\ntrain mix:     sbatch --job-name=met-tr-<tag> slurm/paint_train.slurm data/gt_paint_mix_<tag>{SUF} data/aug{SUF} paint_<tag>{SUF}")
+print(f"train scaling: sbatch --job-name=met-tr-<tag> slurm/paint_train.slurm data/gt_paint_<tag>{SUF}     data/aug{SUF} paint_<tag>{SUF}")

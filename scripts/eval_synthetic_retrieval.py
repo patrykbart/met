@@ -1,6 +1,7 @@
 """Step 3b: retrieval of synthetic gallery images against the Met train DB.
 Correct = the source Met class (whose studio image is in the DB). Reports recall@1/5/10
 pooled over all 5 camera angles, then per angle. Same PCAw (learned on train) as the eval.
+Env override (default = v1): SYNTH_OUT = dir with synth_descriptors.pkl (also gets the summary json).
 """
 import os, sys, json, pickle
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE)
@@ -8,8 +9,9 @@ sys.path.insert(0, REPO)
 import numpy as np, faiss
 from code.utils.utils import estimate_pca_whiten_with_shrinkage, apply_pca_whiten_and_normalize
 
+SYNDIR = os.path.join(REPO, os.environ.get("SYNTH_OUT", "data/descriptors/synthetic"))
 DB  = os.path.join(REPO, "data/descriptors/r18_contr_loss_gem_fc_swsl_ms/descriptors.pkl")
-SYN = os.path.join(REPO, "data/descriptors/synthetic/synth_descriptors.pkl")
+SYN = os.path.join(SYNDIR, "synth_descriptors.pkl")
 GT  = os.path.join(REPO, "data/ground_truth"); DIM = 512
 
 train = np.ascontiguousarray(pickle.load(open(DB, "rb"))["train_descriptors"], dtype="float32")
@@ -61,6 +63,6 @@ for gname, gmask in groups:
         print(f"{a:<14}{r['N']:>8}{r['R@1']:>8.2f}{r['R@5']:>8.2f}{r['R@10']:>8.2f}")
     summary["groups"][gname] = g
 
-out = os.path.join(REPO, "data/descriptors/synthetic/retrieval_summary.json")
+out = os.path.join(SYNDIR, "retrieval_summary.json")
 json.dump(summary, open(out, "w"), indent=2)
 print(f"\nsaved {out}")

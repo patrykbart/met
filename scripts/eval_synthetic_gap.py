@@ -12,6 +12,7 @@ synthetic GAP is directly comparable to the real-painting-query GAP. ACC == R@1 
 already-extracted descriptors (no re-extraction).
 
 CPU-only; run via SLURM, not the login node.
+Env override (default = v1): SYNTH_OUT = dir with synth_descriptors.pkl (also gets the summary json).
 """
 import os, sys, json, pickle
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE); sys.path.insert(0, REPO)
@@ -21,8 +22,9 @@ from code.classifiers.knn_classifier import KNN_Classifier
 K, TAU, DIM = 7, 50.0, 512
 
 INFO = os.path.join(REPO, "data/ground_truth")
+SYNDIR = os.path.join(REPO, os.environ.get("SYNTH_OUT", "data/descriptors/synthetic"))
 DB   = os.path.join(REPO, "data/descriptors/r18_contr_loss_gem_fc_swsl_ms/descriptors.pkl")
-SYN  = os.path.join(REPO, "data/descriptors/synthetic/synth_descriptors.pkl")
+SYN  = os.path.join(SYNDIR, "synth_descriptors.pkl")
 
 # DB train + real distractors (label -1) from the step-1 descriptors
 d = pickle.load(open(DB, "rb"))
@@ -76,5 +78,5 @@ def group(gmask, gname):
 out = {"K": K, "tau": TAU, "n_distractors": int(n_distr),
        "all_synthetic": group(np.ones(nR, bool), "ALL synthetic"),
        "paintings": group(pmask, 'paintings (Classification=="Paintings")')}
-json.dump(out, open(os.path.join(REPO, "data/descriptors/synthetic/gap_summary.json"), "w"), indent=2)
-print("\nsaved data/descriptors/synthetic/gap_summary.json", flush=True)
+json.dump(out, open(os.path.join(SYNDIR, "gap_summary.json"), "w"), indent=2)
+print(f"\nsaved {os.path.join(SYNDIR, 'gap_summary.json')}", flush=True)

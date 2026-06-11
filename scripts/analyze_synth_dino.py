@@ -28,11 +28,23 @@ from sklearn.manifold import TSNE
 from sklearn.metrics import silhouette_score
 from sklearn.model_selection import train_test_split
 
-# EXP-3 per-view retrieval R@1 (R18-SWSL; from EXPERIMENTS.md) -- different model, but
-# the framing-bug ordering should transfer. Used only as an overlay reference.
+# Per-view retrieval R@1 overlay (R18-SWSL renders-as-queries; different model, but the
+# framing ordering should transfer). Default = the v1 EXP-3 numbers; pass --r1-json to
+# overlay another run (either a plain {angle: R@1} mapping or a retrieval_summary.json).
 EXP3_R1 = {"left upper": 75.85, "front": 64.84, "right bottom": 21.95,
            "left bottom": 20.62, "right upper": 1.41}
 SEED = 0
+
+
+def load_r1(path, angles):
+    """angle -> R@1 from --r1-json (plain mapping or eval_synthetic_retrieval summary)."""
+    if not path:
+        return EXP3_R1 if all(a in EXP3_R1 for a in angles) else {}
+    d = json.load(open(path))
+    if "groups" in d:  # retrieval_summary.json: use the ALL-synthetic per-angle block
+        per = next(iter(d["groups"].values()))["per_angle"]
+        return {a: v["R@1"] for a, v in per.items()}
+    return d
 
 
 def l2n(x):
@@ -116,6 +128,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default="data/synth_dino")
     ap.add_argument("--model", default="dinov3_vitl16")
+    ap.add_argument("--r1-json", default=None,
+                    help="per-angle R@1 overlay (plain mapping or retrieval_summary.json); "
+                         "default = the v1 EXP-3 numbers when angle names match")
     args = ap.parse_args()
     outdir = os.path.join(args.dir, "analysis")
     os.makedirs(outdir, exist_ok=True)
@@ -148,6 +163,17 @@ def main():
         "placard_x_quartile": decode_factor(synth, placard_bin, "placard_x_quartile"),
         "aspect_quartile": decode_factor(synth, aspect_bin, "aspect_quartile"),
     }
+    # extra recorded factors (v2): placard row + per-camera pose jitter. Decode only what
+    # varies WITHIN angle groups (else it's just the angle factor in disguise).
+    for extra in ("placard_z", "cam_y", "cam_z"):
+        if extra not in s.files:
+            continue
+        v = s[extra]
+        within = max(float(v[angle_idx == i].std()) for i in range(len(angles)))
+        if within < 1e-4:
+            continue
+        summary["substructure"][f"{extra}_quartile"] = decode_factor(
+            synth, quartile_bins(v), f"{extra}_quartile")
     # local structure: what dominates each render's nearest neighbours?
     summary["knn_composition"] = knn_composition(synth, smet, angle_idx, floor_idx, k=10)
 
@@ -158,7 +184,7 @@ def main():
     summary["domain_3way"] = decode_factor(dom_X, dom_y, "domain_3way(studio/synth/query)")
     # pairwise (subsample synth to balance)
     rng = np.random.default_rng(SEED)
-    ssub = synth[rng.choice(len(synth), min(len(synth), 4952), replace=False)]
+    ssub = synth[rng.choice(len(synth), min(len(synth), len(studio)), replace=False)]
     for a_name, A, b_name, B in [("studio", studio, "synth", ssub),
                                  ("studio", studio, "query", pq),
                                  ("synth", ssub, "query", pq)]:
@@ -179,14 +205,16 @@ def main():
 
     # per-view cosine to the PAIRED studio source (key domain-gap-per-view number)
     print("\n=== per-view cosine to paired studio source ===", flush=True)
+    r1_overlay = load_r1(args.r1_json, angles)
     studio_row = {int(m): i for i, m in enumerate(studio_met)}
     per_view = {}
     for i, a in enumerate(angles):
         m = angle_idx == i
         sims = [float(synth[j] @ studio[studio_row[int(smet[j])]])
                 for j in np.where(m)[0] if int(smet[j]) in studio_row]
-        per_view[a] = dict(mean_cos_to_studio=float(np.mean(sims)), n=len(sims), exp3_R1=EXP3_R1.get(a))
-        print(f"  {a:>12}: cos->studio {per_view[a]['mean_cos_to_studio']:.3f}  (EXP-3 R@1 {EXP3_R1.get(a)})", flush=True)
+        per_view[a] = dict(mean_cos_to_studio=float(np.mean(sims)), n=len(sims),
+                           retrieval_R1=r1_overlay.get(a))
+        print(f"  {a:>12}: cos->studio {per_view[a]['mean_cos_to_studio']:.3f}  (retrieval R@1 {r1_overlay.get(a)})", flush=True)
     summary["per_view_to_studio"] = per_view
 
     json.dump(summary, open(os.path.join(outdir, "summary.json"), "w"), indent=2)
@@ -271,16 +299,17 @@ def make_figures(outdir, synth, angle_idx, floor_idx, studio, pq, angles, floors
             ax.set_xticks([]); ax.set_yticks([])
             fig.tight_layout(); fig.savefig(os.path.join(outdir, fname), dpi=140); plt.close(fig)
 
-    # (3) per-view cosine-to-studio vs EXP-3 R@1
+    # (3) per-view cosine-to-studio vs paired retrieval R@1 (when an overlay is available)
     order = sorted(angles, key=lambda a: per_view[a]["mean_cos_to_studio"], reverse=True)
     cos = [per_view[a]["mean_cos_to_studio"] for a in order]
-    r1 = [per_view[a]["exp3_R1"] for a in order]
+    r1 = [per_view[a]["retrieval_R1"] for a in order]
     fig, ax1 = plt.subplots(figsize=(7, 4.5))
     ax1.bar(range(len(order)), cos, color="#ff7f0e", alpha=.8)
     ax1.set_ylabel("mean cosine to paired studio source", color="#ff7f0e")
     ax1.set_xticks(range(len(order))); ax1.set_xticklabels(order, rotation=20)
-    ax2 = ax1.twinx(); ax2.plot(range(len(order)), r1, "o-", color="#1f77b4")
-    ax2.set_ylabel("EXP-3 retrieval R@1 (%)", color="#1f77b4")
+    if all(v is not None for v in r1):
+        ax2 = ax1.twinx(); ax2.plot(range(len(order)), r1, "o-", color="#1f77b4")
+        ax2.set_ylabel("retrieval R@1 (%)", color="#1f77b4")
     ax1.set_title("Per-view: render↔studio similarity vs retrievability")
     fig.tight_layout(); fig.savefig(os.path.join(outdir, "per_view_to_studio.png"), dpi=140); plt.close(fig)
 

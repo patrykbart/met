@@ -23,7 +23,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # scripts/
-from synth_meta import ANGLES, SYNTH_ROOT, parse_metadata
+from synth_meta import SYNTH_ROOT, angles_for, parse_metadata
 
 HF_MODELS = {
     "dinov3_vitl16": "facebook/dinov3-vitl16-pretrain-lvd1689m",
@@ -62,9 +62,12 @@ def build_records(synth_root, angles, limit=None):
         m = parse_metadata(fdir)
         for ang in angles:
             path = os.path.join(fdir, f"0_rgb_{ang}.png")
+            cam = m["cams"].get(ang) or {}
+            loc = cam.get("loc") or (None, None, None)
             recs.append(dict(
                 folder=int(fl), met_id=m["met_id"], angle=ang, floor=m["floor"],
-                aspect=m["aspect"], placard_x=m["placard_x"], path=path,
+                aspect=m["aspect"], placard_x=m["placard_x"], placard_z=m["placard_z"],
+                cam_y=loc[1], cam_z=loc[2], path=path,
             ))
     return recs
 
@@ -125,12 +128,13 @@ def main():
     p.add_argument("--dry-run", action="store_true", help="build records + checks, no model/GPU")
     args = p.parse_args()
 
-    print(f"building records from {args.synth_root} (angles={ANGLES})", flush=True)
-    recs = build_records(args.synth_root, ANGLES, args.limit)
+    angles = angles_for(args.synth_root)
+    print(f"building records from {args.synth_root} (angles={angles})", flush=True)
+    recs = build_records(args.synth_root, angles, args.limit)
     n = len(recs)
     floors = sorted({r["floor"] for r in recs})
     floor_idx = {f: i for i, f in enumerate(floors)}
-    ang_idx = {a: i for i, a in enumerate(ANGLES)}
+    ang_idx = {a: i for i, a in enumerate(angles)}
     n_missing_id = sum(r["met_id"] is None for r in recs)
     n_missing_file = sum(not os.path.isfile(r["path"]) for r in recs)
     print(f"records: {n}  (folders x {len(ANGLES)} angles)", flush=True)
@@ -147,11 +151,16 @@ def main():
         aspect=np.array([r["aspect"] for r in recs], dtype=np.float32),
         placard_x=np.array([r["placard_x"] for r in recs], dtype=np.float32),
     )
+    # extra factors only meaningfully randomized in v2 (placard row + per-camera pose jitter)
+    for extra in ("placard_z", "cam_y", "cam_z"):
+        vals = [r[extra] for r in recs]
+        if all(v is not None for v in vals) and len({round(v, 4) for v in vals}) > 1:
+            labels[extra] = np.array(vals, dtype=np.float32)
 
     os.makedirs(args.out_dir, exist_ok=True)
     recs_path = os.path.join(args.out_dir, "synth_dino_records.json")
     with open(recs_path, "w") as f:
-        json.dump(dict(angles=ANGLES, floors=floors, n=n,
+        json.dump(dict(angles=angles, floors=floors, n=n,
                        src_paths=[r["path"] for r in recs]), f)
     print(f"wrote {recs_path}", flush=True)
 

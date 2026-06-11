@@ -2,6 +2,8 @@
 our step-1 model (epoch 10). Saves descriptors + source Met id + camera angle.
 Synthetic images are uniform 512x512 so we batch (unlike the variable-size Met images).
 Set LIMIT=N for a quick CPU pre-flight. Output: data/descriptors/synthetic/synth_descriptors.pkl
+Env overrides (defaults = v1): SYNTH_DS = dataset root, SYNTH_OUT = output dir, e.g. for v2:
+  SYNTH_DS=.../visart-dataset-v2 SYNTH_OUT=data/descriptors/synthetic_v2
 """
 import os, sys, re, glob, pickle
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE)
@@ -13,11 +15,11 @@ from torchvision.datasets.folder import default_loader
 from code.networks.SiameseNet import siamese_network
 from code.utils.augmentations import augmentation
 
-DS  = "/mnt/storage_6/project_data/pl0896-03/visart-dataset"
+DS  = os.environ.get("SYNTH_DS", "/mnt/storage_6/project_data/pl0896-03/visart-dataset")
 CKPT = os.path.join(REPO, "data/models/r18SWSL_con-syn+real-closest/"
        "method:_contrastive_net:_r18_sw-sup_bckbn_lr:1e-07_b_size:_64_epochs:_10_wdecay:_1e-06_"
        "margin:_1.8_schedstep:_6_schedgamma:_0.1_imsize:_500_pairs_type:_new_pos+new_neg_pca_emb_proj_pretrained_seed:_0_epoch:_10")
-OUT = os.path.join(REPO, "data/descriptors/synthetic"); os.makedirs(OUT, exist_ok=True)
+OUT = os.path.join(REPO, os.environ.get("SYNTH_OUT", "data/descriptors/synthetic")); os.makedirs(OUT, exist_ok=True)
 LIMIT = int(os.environ.get("LIMIT", "0"))
 
 # (path, source Met id, camera angle) for every synthetic image
@@ -26,7 +28,7 @@ for folder in sorted(os.listdir(DS)):
     fdir = os.path.join(DS, folder); mfile = os.path.join(fdir, "metadata.json")
     if not os.path.isdir(fdir) or not os.path.exists(mfile):
         continue
-    m = re.search(r'MET/(\d+)/0\.jpg', open(mfile).read())
+    m = re.search(r'MET/(\d+)/\d+\.jpg', open(mfile).read())
     if not m:
         continue
     mid = int(m.group(1))

@@ -4,7 +4,11 @@ canvas aspect, placard position, per-camera pose) plus the definitive source
 Met-id (from the CanvasMaterial texture path).
 
 Reusable: `parse_metadata(folder)` -> dict. Run as a script for a dataset-wide
-survey of factor cardinalities (which hyperparameters are recoverable at all).
+survey of factor cardinalities (which hyperparameters are recoverable at all):
+  .venv/bin/python scripts/synth_meta.py [synth_root]    (default = v1)
+
+Works for both dataset versions; the camera/view names differ (v1 named poses,
+v2 arc angles) — use `angles_for(synth_root)` to get the right list.
 """
 import json
 import os
@@ -13,8 +17,19 @@ import sys
 from collections import Counter
 
 SYNTH_ROOT = "/mnt/storage_6/project_data/pl0896-03/visart-dataset"
-ANGLES = ["front", "left upper", "right upper", "left bottom", "right bottom"]
+ANGLES = ["front", "left upper", "right upper", "left bottom", "right bottom"]   # v1
+ANGLES_V2 = ["30", "60", "90", "120", "150"]                                     # v2 arc angles
 _MET_ID_RE = re.compile(r"/MET/(\d+)/")
+
+
+def angles_for(synth_root):
+    """Camera/view names for a dataset root, read off folder 0's CAMERA objects
+    (numeric names sorted numerically -> v2 arc; otherwise the v1 named rig)."""
+    cams = parse_metadata(os.path.join(synth_root, "0"))["cams"]
+    names = list(cams)
+    if names and all(n.isdigit() for n in names):
+        return sorted(names, key=int)
+    return [a for a in ANGLES if a in cams] or sorted(names)
 
 
 def met_id_from_path(p):
@@ -53,9 +68,10 @@ def parse_metadata(folder):
         if cscale[1]:
             aspect = cscale[0] / cscale[1]
 
-    # placard ("plakietka") x-position
+    # placard ("plakietka") x/z-position (z varies in v2: up/down row)
     plk = objs.get("plakietka")
     placard_x = plk["location"][0] if plk else None
+    placard_z = plk["location"][2] if plk else None
 
     # cameras: name -> {loc, rot}
     cams = {n: {"loc": o.get("location"), "rot": o.get("rotation_euler")}
@@ -73,15 +89,18 @@ def parse_metadata(folder):
         aspect=aspect,
         canvas_scale=cscale,
         placard_x=placard_x,
+        placard_z=placard_z,
         cams=cams,
         light_keys=light_keys,
     )
 
 
 def _survey():
+    root = sys.argv[1] if len(sys.argv) > 1 else SYNTH_ROOT
+    print(f"survey of {root}")
     folders = sorted(
-        (d for d in os.listdir(SYNTH_ROOT)
-         if d.isdigit() and os.path.isdir(os.path.join(SYNTH_ROOT, d))),
+        (d for d in os.listdir(root)
+         if d.isdigit() and os.path.isdir(os.path.join(root, d))),
         key=int,
     )
     print(f"folders: {len(folders)}")
@@ -94,7 +113,7 @@ def _survey():
     n_bad = 0
     for fl in folders:
         try:
-            r = parse_metadata(os.path.join(SYNTH_ROOT, fl))
+            r = parse_metadata(os.path.join(root, fl))
         except Exception as e:
             n_bad += 1
             if n_bad <= 5:

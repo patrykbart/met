@@ -7,12 +7,19 @@ Creates:
   (+ valset/testset/mini symlinks in both gt dirs)
 
 Synthetic path scheme: "SYNTH/<folder>/<file>.png" resolves via data/aug/images/SYNTH -> visart-dataset.
+
+For another dataset version, pass --syn and --suffix (defaults reproduce the v1 layout above), e.g.:
+  --syn .../visart-dataset-v2 --suffix _v2   ->  data/aug_v2, data/gt_aug_v2, data/gt_synth_v2
 """
-import os, re, glob, json
+import os, re, glob, json, argparse
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE)
 MET = "/mnt/storage_6/project_data/pl0896-03/met-dataset"
-SYN = "/mnt/storage_6/project_data/pl0896-03/visart-dataset"
-AUG_IMG = os.path.join(REPO, "data/aug/images"); os.makedirs(AUG_IMG, exist_ok=True)
+ap = argparse.ArgumentParser()
+ap.add_argument("--syn", default="/mnt/storage_6/project_data/pl0896-03/visart-dataset")
+ap.add_argument("--suffix", default="", help="appended to data/aug, data/gt_aug, data/gt_synth")
+args = ap.parse_args()
+SYN, SUF = args.syn, args.suffix
+AUG_IMG = os.path.join(REPO, f"data/aug{SUF}/images"); os.makedirs(AUG_IMG, exist_ok=True)
 
 def link(src, dst):
     if os.path.islink(dst) or os.path.exists(dst):
@@ -30,7 +37,7 @@ for folder in sorted((f for f in os.listdir(SYN) if os.path.isdir(os.path.join(S
     mfile = os.path.join(SYN, folder, "metadata.json")
     if not os.path.exists(mfile):
         continue
-    m = re.search(r'MET/(\d+)/0\.jpg', open(mfile).read())
+    m = re.search(r'MET/(\d+)/\d+\.jpg', open(mfile).read())
     if not m:
         continue
     mid = int(m.group(1))
@@ -39,7 +46,7 @@ for folder in sorted((f for f in os.listdir(SYN) if os.path.isdir(os.path.join(S
 orig = json.load(open(os.path.join(MET, "MET_database.json")))
 print(f"original studio entries: {len(orig)} | synthetic entries: {len(synth)}")
 
-for d, entries in (("data/gt_aug", orig + synth), ("data/gt_synth", synth)):
+for d, entries in ((f"data/gt_aug{SUF}", orig + synth), (f"data/gt_synth{SUF}", synth)):
     dd = os.path.join(REPO, d); os.makedirs(dd, exist_ok=True)
     json.dump(entries, open(os.path.join(dd, "MET_database.json"), "w"))
     for j in ("valset.json", "testset.json", "mini_MET_database.json"):

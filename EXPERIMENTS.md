@@ -17,7 +17,7 @@ _Last updated: 2026-06-12 (EXP-14 done — dataset ablation: randomization **inv
 | 4 | Train/fine-tune **with synthetic data**, eval on real paintings | ✅ clean **from-scratch +synth = GAP 38.15** (+2.18 over step 1, +2.71 paint ACC), **beats paper 36.1** — synthetic data helps on its own |
 | 5 | New method | 🟡 **DINOv3 + geometric re-rank** (EXP-6): ViT-L+gate **GAP 53.07** (+4.9 over DINOv3 ZS, both GAP/GAP⁻ up); cross-domain mining (additional exp) running (7332307) |
 | 6 | **Dataset v2** (GN-randomized scene, arc cameras) — rerun EXP-3/7/8/4 | 🟡 EXP-10/11/12 ✅ (v2 ≥ v1 as training data everywhere; synthall **beats the all-real 397k model** on GAP⁻/ACC); EXP-13: FT-synth **GAP 38.99**, FT-combined 38.66 ✅, from-scratch training (7372507) |
-| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | ✅ EXP-14: randomization **hurts** the open-set benchmark (frozen room best, **fGAP 36.09** ≈ all-real 35.97/paper 36.1); viewpoints are the key ingredient (3≈5 angles, frontal-only collapses); frame variety harmful; 1024² no benchmark gain |
+| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | ✅ EXP-14: randomization **hurts** the open-set benchmark (frozen room best, **fGAP 36.09** ≈ all-real 35.97/paper 36.1); viewpoints are the key ingredient (3≈5 angles, frontal-only collapses); frame variety harmful; 1024² no benchmark gain. 🟡 `noframe` leave-one-out row rendering (7398961→66) |
 
 ## Headline results
 All eval'd identically: multi-scale descriptors, **original 397k studio DB**, real test queries, full K×τ grid.
@@ -400,7 +400,10 @@ the best closed-world rung (75.32). **Viewpoints dominate:** {60,90,120} ≈ all
 closed row (75.41/76.35) but ≈ default on the full benchmark (34.48) — not worth ~3× render cost.
 Caveats: single seed/run per rung; ±2 noise on the 148-q slices (the inversion rests on the
 monotone 6-point fGAP trend over 1,003 queries). Suggested follow-up: rerun EXP-13's full-benchmark
-trainings with abl0 renders. Write-up:
+trainings with abl0 renders. **Leave-one-out row in flight (2026-06-12):**
+`visart-dataset-v2-noframe` = default config + `--bake-frames` (isolates the frame effect from the
+ladder's other end) — render array 7398961 + merge 7398962 (visart2026), chained prep 7398963 →
+train 7398964 → closed/full evals 7398965/7398966. Write-up:
 [`experiments-v2/dataset-ablation/`](experiments-v2/dataset-ablation/README.md).
 
 ## How to evaluate any model (the reusable recipe)

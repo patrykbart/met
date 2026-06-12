@@ -51,6 +51,7 @@ on the wall, and the placard still vary; folder *i* = the same source painting e
 | 3 | `abl3` | `…-abl3-tex-light-glass` | glass sheet at p=0.25 |
 | 4 | `abl4` | `…-abl4-tex-light-glass-frame` | frame molding/color variety |
 | 5 | — | `visart-dataset-v2` (default) | camera-pose jitter *(= EXP-12 `synthall_v2`, reused)* |
+| LOO | `noframe` | `…-v2-noframe` | **leave-one-out**: the default config with only frame variety frozen (`--bake-frames`) — isolates the frame effect inside the full randomization context |
 
 ### Axis 2 — render resolution
 
@@ -75,7 +76,8 @@ their weight.
 
 ## Results
 
-*(complete, 2026-06-12. The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
+*(complete for the original nine rows, 2026-06-12; the leave-one-out `noframe` row is rendering +
+queued. The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
 still varies the painting, its wall scale, and the placard).
@@ -108,6 +110,7 @@ at all (EXP-8).
 | ✓ | ✓ | ✓ | — | — | 512 | 5 | 75.32 | 76.35 | 35.29 | 53.62 | 56.03 | 71.24 |
 | ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | 72.61 | 73.65 | 34.35 | 52.10 | 54.74 | 68.32 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 5 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
+| ✓ | ✓ | ✓ | — | ✓ | 512 | 5 | | | | | | |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | 75.41 | 76.35 | 34.48 | 52.12 | 54.64 | 68.36 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | 74.31 | 75.68 | 33.70 | 53.71 | 56.53 | 70.51 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | 68.55 | 70.27 | 28.64 | 49.97 | 53.04 | 63.84 |
@@ -137,9 +140,11 @@ at all (EXP-8).
 5. **1024² helps only where it isn't needed**: best closed-world row (75.41/76.35) but full-
    benchmark ≈ default (34.48 vs 34.38, fGAP⁻/fACC slightly lower) at ~3× render time and ~4× disk.
 
-Follow-up this suggests: regenerate the *full-benchmark* training mixes (EXP-13's FT-synth /
-from-scratch, currently using default v2) with the frozen-room renders — if the +1.7 fGAP
-transfers, the headline GAP 38.99 has room above it.
+Follow-ups: **(a)** the `noframe` leave-one-out row (in flight) checks the frame effect from the
+other end of the ladder — prediction if effects compose: ≈ abl3 on fGAP (~35.3, still below abl0),
+possibly the best 512² closed-world row; **(b)** regenerate the *full-benchmark* training mixes
+(EXP-13's FT-synth / from-scratch, currently using default v2) with the frozen-room renders — if
+the +1.7 fGAP transfers, the headline GAP 38.99 has room above it.
 
 ## How to reproduce
 
@@ -149,8 +154,8 @@ PREP=$(sbatch --parsable --partition=standard --time=1:00:00 --mem=8G --cpus-per
     --wrap '.venv/bin/python scripts/build_ablation_data.py')          # manifests + im_roots
 declare -A ROOT=( [abl0]=data/aug_abl0 [abl1]=data/aug_abl1 [abl2]=data/aug_abl2 \
                   [abl3]=data/aug_abl3 [abl4]=data/aug_abl4 [1024]=data/aug_1024 \
-                  [ang3]=data/aug_v2 [ang1]=data/aug_v2 )
-for tag in abl0 abl1 abl2 abl3 abl4 1024 ang3 ang1; do
+                  [ang3]=data/aug_v2 [ang1]=data/aug_v2 [noframe]=data/aug_noframe )
+for tag in abl0 abl1 abl2 abl3 abl4 1024 ang3 ang1 noframe; do
   extra=""; [ "$tag" = "1024" ] && extra="--time=8:00:00"              # 4x decode cost in mining
   T=$(sbatch --parsable --kill-on-invalid-dep=yes --dependency=afterok:$PREP $extra \
       --job-name=met-tr-$tag slurm/paint_train.slurm data/gt_paint_synth_$tag ${ROOT[$tag]} paint_synth_$tag)
@@ -160,6 +165,12 @@ for tag in abl0 abl1 abl2 abl3 abl4 1024 ang3 ang1; do
       slurm/eval_full.slurm  data/models/r18SWSL_paint_synth_$tag 10 synth_$tag
 done
 ```
+
+The `noframe` dataset is rendered first in the `visart2026` repo (default config + `--bake-frames`):
+`VISART_SAVE_BASE=…scratch…/visart-dataset-v2-noframe VISART_EXTRA_ARGS="--bake-frames" sbatch
+--parsable slurm/render_array.sbatch`, then `slurm/merge_shards.sbatch` into
+`…/visart-dataset-v2-noframe` — the prep → train → eval chain above hangs off the merge via
+`--dependency=afterok`.
 
 Models land in `data/models/r18SWSL_paint_synth_<tag>`, descriptors in
 `data/descriptors{,_full}_synth_<tag>`; the table reads the `>> 2-fold mean` line of each closed

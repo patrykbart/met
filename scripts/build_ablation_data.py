@@ -9,6 +9,7 @@ Rows (fixed ladder; see experiments-v2/dataset-ablation/README.md):
   abl0..abl4   visart-dataset-v2-abl{0..4}-*  -- procedural-randomization ladder
   1024         visart-dataset-v2-1024         -- default config rendered at 1024^2
   ang3 / ang1  visart-dataset-v2 filtered to arc angles {60,90,120} / {90} -- viewpoint count
+  noframe      visart-dataset-v2-noframe      -- leave-one-out: default config + --bake-frames
   (rung 5 -- default v2, all renders -- is EXP-12's synthall_v2 run, reused, not rebuilt here)
 
 Creates per row:  data/aug_<tag>/images/{MET,test_*,SYNTH} symlinks (ang* reuse data/aug_v2)
@@ -33,7 +34,8 @@ ROWS = [("abl0", f"{DS}/visart-dataset-v2-abl0-none",                  None,    
         ("abl4", f"{DS}/visart-dataset-v2-abl4-tex-light-glass-frame", None,          None),
         ("1024", f"{DS}/visart-dataset-v2-1024",                       None,          None),
         ("ang3", f"{DS}/visart-dataset-v2",                            {60, 90, 120}, "data/aug_v2"),
-        ("ang1", f"{DS}/visart-dataset-v2",                            {90},          "data/aug_v2")]
+        ("ang1", f"{DS}/visart-dataset-v2",                            {90},          "data/aug_v2"),
+        ("noframe", f"{DS}/visart-dataset-v2-noframe",                 None,          None)]
 
 paint_ids = {int(e["id"]) for e in json.load(open(os.path.join(GT_PAINT, "MET_database.json")))}
 

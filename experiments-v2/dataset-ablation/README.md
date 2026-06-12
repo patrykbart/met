@@ -62,9 +62,8 @@ their weight.
 
 ## Results
 
-*(partial, 2026-06-12: all closed evals except `1024` are in, plus `ang1`'s full benchmark; the
-remaining full evals are running and the `1024` training is still going — see [Jobs](#jobs). The
-default-v2 row is EXP-12's `synthall_v2` run, reused.)*
+*(near-complete, 2026-06-12: everything is in except the `1024` full benchmark — job 7397378 still
+running. The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
 still varies the painting, its wall scale, and the placard). **Factors:** `tex` = wall/floor/roof
@@ -79,14 +78,14 @@ recipe on the 12,403 real painting photos, no renders at all — EXP-8).
 
 | tex | light | glass | frame | jitter | res | angles | cGAP⁻ | cACC | fGAP | fGAP⁻ | fACC | pGAP⁻ |
 |:-:|:-:|:-:|:-:|:-:|--:|--:|--:|--:|--:|--:|--:|--:|
-| — | — | — | — | — | 512 | 5 | 73.78 | 75.00 | | | | |
-| ✓ | — | — | — | — | 512 | 5 | 73.94 | 75.00 | | | | |
-| ✓ | ✓ | — | — | — | 512 | 5 | 74.42 | 75.68 | | | | |
-| ✓ | ✓ | ✓ | — | — | 512 | 5 | 75.32 | 76.35 | | | | |
-| ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | 72.61 | 73.65 | | | | |
+| — | — | — | — | — | 512 | 5 | 73.78 | 75.00 | 36.09 | 54.28 | 56.73 | 70.92 |
+| ✓ | — | — | — | — | 512 | 5 | 73.94 | 75.00 | 35.56 | 53.29 | 55.73 | 71.84 |
+| ✓ | ✓ | — | — | — | 512 | 5 | 74.42 | 75.68 | 35.13 | 53.47 | 55.93 | 71.29 |
+| ✓ | ✓ | ✓ | — | — | 512 | 5 | 75.32 | 76.35 | 35.29 | 53.62 | 56.03 | 71.24 |
+| ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | 72.61 | 73.65 | 34.35 | 52.10 | 54.74 | 68.32 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 5 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
-| ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | | | | | | |
-| ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | 74.31 | 75.68 | | | | |
+| ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | 75.41 | 76.35 | | | | |
+| ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | 74.31 | 75.68 | 33.70 | 53.71 | 56.53 | 70.51 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | 68.55 | 70.27 | 28.64 | 49.97 | 53.04 | 63.84 |
 | † | — | — | — | — | — | — | *67.18* | *70.27* | *28.83* | *49.08* | *52.14* | *61.83* |
 

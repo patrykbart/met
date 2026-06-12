@@ -4,7 +4,7 @@ Running lab notebook: what we've done, the exact settings, results, and how to c
 Goal: beat the paper's best single model (**R18-SWSL Con-Syn+Real-closest, GAP 36.1**) by adding a
 synthetic gallery phone-photo dataset (+ a new method). Plan & targets-to-beat in `reference/README.md`.
 
-_Last updated: 2026-06-12 (EXP-10–12 added — synthetic dataset **v2** reruns; EXP-13 from-scratch run still training)._
+_Last updated: 2026-06-12 (EXP-14 added — dataset ablation over the v2 variants, 8 trainings queued; EXP-13 from-scratch run still training)._
 
 ## Status snapshot
 
@@ -17,6 +17,7 @@ _Last updated: 2026-06-12 (EXP-10–12 added — synthetic dataset **v2** reruns
 | 4 | Train/fine-tune **with synthetic data**, eval on real paintings | ✅ clean **from-scratch +synth = GAP 38.15** (+2.18 over step 1, +2.71 paint ACC), **beats paper 36.1** — synthetic data helps on its own |
 | 5 | New method | 🟡 **DINOv3 + geometric re-rank** (EXP-6): ViT-L+gate **GAP 53.07** (+4.9 over DINOv3 ZS, both GAP/GAP⁻ up); cross-domain mining (additional exp) running (7332307) |
 | 6 | **Dataset v2** (GN-randomized scene, arc cameras) — rerun EXP-3/7/8/4 | 🟡 EXP-10/11/12 ✅ (v2 ≥ v1 as training data everywhere; synthall **beats the all-real 397k model** on GAP⁻/ACC); EXP-13: FT-synth **GAP 38.99**, FT-combined 38.66 ✅, from-scratch training (7372507) |
+| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | 🟡 EXP-14: 9 rows, 8 trainings + evals queued (7397360–84) |
 
 ## Headline results
 All eval'd identically: multi-scale descriptors, **original 397k studio DB**, real test queries, full K×τ grid.
@@ -373,6 +374,22 @@ their v1 counterparts on GAP. Pending: the **clean from-scratch A/B** (10 epochs
 7372507, eval 7372508; v1: GAP 38.15). Write-up after it lands:
 [`experiments-v2/training-with-synthetic/`](experiments-v2/training-with-synthetic/README.md).
 
+### EXP-14 — dataset ablation: what makes the renders work? 🟡
+Which ingredients of the v2 dataset produce the training gain? Nine rows along three axes —
+**procedural-randomization ladder** (`visart-dataset-v2-abl0-none` frozen room → `abl1` +textures →
+`abl2` +light → `abl3` +glass → `abl4` +frame → default v2 = +camera jitter; 24,490 renders each),
+**render resolution** (`visart-dataset-v2-1024`, default config @1024²), and **viewpoint count**
+(default v2 filtered to arc angles {90} = 4,898 / {60,90,120} = 14,694 / all five). Every row gets
+**EXP-12's strongest treatment, byte-identical**: synth-only "all renders" manifest (seed-1 shuffle
+→ same slot order as `synthall_v2` for full-dataset rows), step-1 recipe (`paint_train.slurm`),
+eval closed paint world (`paint_eval.slurm`) + full 397k benchmark incl. PAINT148 (`eval_full.slurm`).
+Default-v2 row = EXP-12's `synthall_v2` (closed GAP⁻ 74.38 / full GAP 34.38), **reused**. Manifests:
+`scripts/build_ablation_data.py` (job 7397360) → `data/gt_paint_synth_<tag>` + `data/aug_<tag>`
+(angle rows reuse `data/aug_v2`); models `r18SWSL_paint_synth_<tag>`. Trains 7397361/64/67/70/73/76
+(1024, 8h limit for the 4× decode)/79/82 + paired closed/full evals (…62/63 etc., afterok-chained,
+queued behind EXP-13). Angle rows are volume-confounded — read against EXP-12's scaling arm.
+Write-up + per-row job table: [`experiments-v2/dataset-ablation/`](experiments-v2/dataset-ablation/README.md).
+
 ## How to evaluate any model (the reusable recipe)
 ```bash
 # GPU job: extract MS descriptors (original studio DB + real queries) then full-grid + paintings eval
@@ -409,6 +426,7 @@ sbatch --job-name=met-fteval-<name> slurm/extract_eval_ft.slurm <combined|synth>
 - `code/`: faiss→CPU patch, `extract_descriptors.py` weights_only fix, `train_contrastive.py` `--init_weights`.
 - `reference/README.md` — paper targets + method↔`pairs_type` mapping.
 - **EXP-10..13 (dataset v2):** the same scripts/jobs with dataset-root/suffix params (`--syn/--suffix`, `SYNTH_DS`/`SYNTH_OUT`, positional slurm args; defaults = v1) + `scripts/plot_mixing_report.py --v2`; write-ups in `experiments-v2/`.
+- **EXP-14** (dataset ablation): `scripts/build_ablation_data.py` (fixed 8-row ladder → manifests + im_roots; reuses `paint_train`/`paint_eval`/`eval_full` slurm jobs).
 
 **Local only (git-ignored `data/`):**
 - `data/images`, `data/ground_truth` — dataset symlinks. `data/aug/images`, `data/gt_aug`, `data/gt_synth` — augmented training wiring.
@@ -416,4 +434,5 @@ sbatch --job-name=met-fteval-<name> slurm/extract_eval_ft.slurm <combined|synth>
 - `data/descriptors*/` — extracted descriptors per model. `data/authors/` — authors' checkpoint + descriptors.
 - `data/synth_dino/` — EXP-7: synthetic + real DINOv3 ViT-L feats, records, `analysis/` (summary.json + figures).
 - **v2 (suffix `_v2`):** `data/{aug,gt_aug,gt_synth}_v2`, `data/gt_paint_{mix_*,synth*}_v2` manifests; `data/descriptors/synthetic_v2` (EXP-10 jsons), `data/synth_dino_v2` (EXP-11), `data/descriptors{,_full}_*_v2` + `data/models/r18SWSL_{paint_*,ft_*,scratch_synth}_v2` (EXP-12/13).
+- **EXP-14:** `data/gt_paint_synth_<tag>` manifests + `data/aug_<tag>` im_roots (tags `abl0..abl4,1024,ang3,ang1`), `data/descriptors{,_full}_synth_<tag>`, `data/models/r18SWSL_paint_synth_<tag>`.
 - `data/torch_home/` — cached SWSL weights. `data/MetObjects.csv` (~303 MB). `data/synth_gen/` — painting-class lists.

@@ -62,34 +62,28 @@ their weight.
 
 ## Results
 
-*(pending — jobs queued 2026-06-12, behind the EXP-13 from-scratch run)*
+*(pending — jobs queued 2026-06-12, behind the EXP-13 from-scratch run; the default-v2 row is
+EXP-12's `synthall_v2` run, reused)*
 
-**Axis 1 — randomization ladder** (closed world: 148 q, 2-fold CV; full benchmark: 1,003 q + 18,316 distractors):
+One training per row. The first five columns mark which randomization families the renders carry
+(✓ = active; the ladder is cumulative — in every row the painting, its wall scale, and the placard
+still vary). `res` = render resolution; `angles` = arc views kept per painting (renders =
+4,898 × angles; 3 = {60°, 90°, 120°}, 1 = {90°}). Metrics: **closed** painting world (148 q vs the
+12,403-photo paint DB, 2-fold CV) · **full** 397k benchmark (1,003 q + 18,316 distractors, K/τ
+tuned on val) · **paint GAP⁻** = its 148-painting slice (fixed K=7/τ=50).
 
-| rung | closed GAP⁻ | closed ACC | full GAP | full GAP⁻ | full ACC | paint GAP⁻ (148) |
-|---|--:|--:|--:|--:|--:|--:|
-| 0 — frozen room | | | | | | |
-| 1 — +textures | | | | | | |
-| 2 — +light | | | | | | |
-| 3 — +glass | | | | | | |
-| 4 — +frame | | | | | | |
-| 5 — +cam jitter *(=default, EXP-12)* | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
-| *ref: all-real, 12,403 (EXP-8)* | *67.18* | *70.27* | *28.83* | *49.08* | *52.14* | *61.83* |
-
-**Axis 2 — resolution:**
-
-| renders | closed GAP⁻ | closed ACC | full GAP | full GAP⁻ | full ACC | paint GAP⁻ (148) |
-|---|--:|--:|--:|--:|--:|--:|
-| 512² *(=default, EXP-12)* | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
-| 1024² | | | | | | |
-
-**Axis 3 — viewpoints:**
-
-| views | imgs | closed GAP⁻ | closed ACC | full GAP | full GAP⁻ | full ACC | paint GAP⁻ (148) |
-|---|--:|--:|--:|--:|--:|--:|--:|
-| 90° only | 4,898 | | | | | | |
-| 60/90/120° | 14,694 | | | | | | |
-| all 5 *(=default, EXP-12)* | 24,490 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
+| row | textures | light | glass | frame | cam jitter | res | angles | closed GAP⁻ | closed ACC | full GAP | full GAP⁻ | full ACC | paint GAP⁻ (148) |
+|---|:-:|:-:|:-:|:-:|:-:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `abl0` | — | — | — | — | — | 512 | 5 | | | | | | |
+| `abl1` | ✓ | — | — | — | — | 512 | 5 | | | | | | |
+| `abl2` | ✓ | ✓ | — | — | — | 512 | 5 | | | | | | |
+| `abl3` | ✓ | ✓ | ✓ | — | — | 512 | 5 | | | | | | |
+| `abl4` | ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | | | | | | |
+| default *(EXP-12, reused)* | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 5 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
+| `1024` | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | | | | | | |
+| `ang3` | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | | | | | | |
+| `ang1` | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | | | | | | |
+| *ref: all-real, 12,403 imgs (EXP-8)* | — | — | — | — | — | — | — | *67.18* | *70.27* | *28.83* | *49.08* | *52.14* | *61.83* |
 
 ## Jobs
 

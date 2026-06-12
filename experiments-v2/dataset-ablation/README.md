@@ -10,6 +10,19 @@ angles). Recipe, seeds, manifest construction, and both evaluations are identica
 only the renders change. Metric definitions and protocol: [v1 experiments README](../../experiments/README.md);
 lab notebook: [`EXPERIMENTS.md` → EXP-14](../../EXPERIMENTS.md).*
 
+## TL;DR
+
+- **On the real open-set benchmark, *less* randomization is better.** Full-benchmark GAP falls
+  almost monotonically as the ladder adds randomization (36.09 frozen room → 34.38 fully
+  randomized); the **frozen-room, synthetic-only model ties the all-real 397k-image model**
+  (fGAP 36.09 vs 35.97 ours / 36.1 paper) and leads fGAP⁻/fACC — from 24,490 renders of 4,898
+  painting classes and zero real photos.
+- **Viewpoints are the load-bearing ingredient.** 3 arc angles ≈ all 5 nearly everywhere at 60% of
+  the data; frontal-only collapses to barely above the all-real baseline.
+- **Frame variety is the one clearly harmful family** (worst rung on both worlds); **1024²
+  rendering** buys the best closed-world score but nothing on the full benchmark — not worth 4×
+  the render cost.
+
 ## Design — one treatment, nine rows
 
 Per row: training manifest = **all painting-class renders of that variant** (synth-only; angle rows
@@ -62,8 +75,7 @@ their weight.
 
 ## Results
 
-*(near-complete, 2026-06-12: everything is in except the `1024` full benchmark, still running.
-The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
+*(complete, 2026-06-12. The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
 still varies the painting, its wall scale, and the placard).
@@ -96,10 +108,38 @@ at all (EXP-8).
 | ✓ | ✓ | ✓ | — | — | 512 | 5 | 75.32 | 76.35 | 35.29 | 53.62 | 56.03 | 71.24 |
 | ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | 72.61 | 73.65 | 34.35 | 52.10 | 54.74 | 68.32 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 5 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
-| ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | 75.41 | 76.35 | | | | |
+| ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | 75.41 | 76.35 | 34.48 | 52.12 | 54.64 | 68.36 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | 74.31 | 75.68 | 33.70 | 53.71 | 56.53 | 70.51 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | 68.55 | 70.27 | 28.64 | 49.97 | 53.04 | 63.84 |
 | † | — | — | — | — | — | — | *67.18* | *70.27* | *28.83* | *49.08* | *52.14* | *61.83* |
+
+### Findings
+
+1. **The randomization ladder inverts on the full benchmark.** fGAP: 36.09 → 35.56 → 35.13 →
+   35.29 → 34.35 → 34.38 — every randomization family added costs open-set GAP, and the frozen
+   room ends up the strongest training material (fGAP⁻ 54.28 / fACC 56.73 also top the table).
+   The closed world shows the opposite, much flatter picture (73.78 → 75.32 across the same rungs,
+   a spread ≈ the noise floor): without distractors, scene variety barely matters — the cost of
+   randomization is **distractor-side**.
+2. **A synthetic-painting-only model now ties the full-data real model.** EXP-12's "distractor
+   rejection is the price of painting-only training" (default v2: fGAP 34.38 vs 35.97) was
+   apparently the price of *randomization*: the frozen-room variant closes the whole gap
+   (36.09 ≈ 35.97 ours / 36.1 paper) while keeping the painting-slice gains (pGAP⁻ 70.92 vs 61.83
+   all-real).
+3. **Frame variety is the one clearly harmful ingredient**: abl3 → abl4 drops every metric
+   (−0.94 fGAP, −2.7 cGAP⁻, −2.9 pGAP⁻) — consistent with the frame being a stable per-painting
+   identity cue that randomization destroys. The glass sheet is the most *helpful* rung
+   closed-world (abl3 = 75.32, the best 512² row).
+4. **Viewpoint count matters more than any scene factor.** {60°, 90°, 120°} matches all-5 within
+   noise on everything but fGAP (33.70 vs 34.38) with 40% less data — the ±60° grazing views
+   contribute mainly distractor rejection. Frontal-only loses ~6 closed points (68.55) and 5.7
+   fGAP (28.64), landing at the all-real baseline: multi-view is what the renders are *for*.
+5. **1024² helps only where it isn't needed**: best closed-world row (75.41/76.35) but full-
+   benchmark ≈ default (34.48 vs 34.38, fGAP⁻/fACC slightly lower) at ~3× render time and ~4× disk.
+
+Follow-up this suggests: regenerate the *full-benchmark* training mixes (EXP-13's FT-synth /
+from-scratch, currently using default v2) with the frozen-room renders — if the +1.7 fGAP
+transfers, the headline GAP 38.99 has room above it.
 
 ## How to reproduce
 

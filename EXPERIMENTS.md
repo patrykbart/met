@@ -4,7 +4,7 @@ Running lab notebook: what we've done, the exact settings, results, and how to c
 Goal: beat the paper's best single model (**R18-SWSL Con-Syn+Real-closest, GAP 36.1**) by adding a
 synthetic gallery phone-photo dataset (+ a new method). Plan & targets-to-beat in `reference/README.md`.
 
-_Last updated: 2026-06-12 (EXP-14 added — dataset ablation over the v2 variants, 8 trainings queued; EXP-13 from-scratch run still training)._
+_Last updated: 2026-06-12 (EXP-14 done — dataset ablation: randomization **inverts** on the full benchmark, frozen-room synth-only ties the all-real model at fGAP 36.09; EXP-13 from-scratch run still training)._
 
 ## Status snapshot
 
@@ -17,7 +17,7 @@ _Last updated: 2026-06-12 (EXP-14 added — dataset ablation over the v2 variant
 | 4 | Train/fine-tune **with synthetic data**, eval on real paintings | ✅ clean **from-scratch +synth = GAP 38.15** (+2.18 over step 1, +2.71 paint ACC), **beats paper 36.1** — synthetic data helps on its own |
 | 5 | New method | 🟡 **DINOv3 + geometric re-rank** (EXP-6): ViT-L+gate **GAP 53.07** (+4.9 over DINOv3 ZS, both GAP/GAP⁻ up); cross-domain mining (additional exp) running (7332307) |
 | 6 | **Dataset v2** (GN-randomized scene, arc cameras) — rerun EXP-3/7/8/4 | 🟡 EXP-10/11/12 ✅ (v2 ≥ v1 as training data everywhere; synthall **beats the all-real 397k model** on GAP⁻/ACC); EXP-13: FT-synth **GAP 38.99**, FT-combined 38.66 ✅, from-scratch training (7372507) |
-| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | 🟡 EXP-14: 9 rows, 8 trainings + evals queued (7397360–84) |
+| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | ✅ EXP-14: randomization **hurts** the open-set benchmark (frozen room best, **fGAP 36.09** ≈ all-real 35.97/paper 36.1); viewpoints are the key ingredient (3≈5 angles, frontal-only collapses); frame variety harmful; 1024² no benchmark gain |
 
 ## Headline results
 All eval'd identically: multi-scale descriptors, **original 397k studio DB**, real test queries, full K×τ grid.
@@ -374,7 +374,7 @@ their v1 counterparts on GAP. Pending: the **clean from-scratch A/B** (10 epochs
 7372507, eval 7372508; v1: GAP 38.15). Write-up after it lands:
 [`experiments-v2/training-with-synthetic/`](experiments-v2/training-with-synthetic/README.md).
 
-### EXP-14 — dataset ablation: what makes the renders work? 🟡
+### EXP-14 — dataset ablation: what makes the renders work? ✅
 Which ingredients of the v2 dataset produce the training gain? Nine rows along three axes —
 **procedural-randomization ladder** (`visart-dataset-v2-abl0-none` frozen room → `abl1` +textures →
 `abl2` +light → `abl3` +glass → `abl4` +frame → default v2 = +camera jitter; 24,490 renders each),
@@ -388,7 +388,20 @@ Default-v2 row = EXP-12's `synthall_v2` (closed GAP⁻ 74.38 / full GAP 34.38), 
 (angle rows reuse `data/aug_v2`); models `r18SWSL_paint_synth_<tag>`. Trains 7397361/64/67/70/73/76
 (1024, 8h limit for the 4× decode)/79/82 + paired closed/full evals (…62/63 etc., afterok-chained,
 queued behind EXP-13). Angle rows are volume-confounded — read against EXP-12's scaling arm.
-Write-up + per-row job table: [`experiments-v2/dataset-ablation/`](experiments-v2/dataset-ablation/README.md).
+**Results (all 24 jobs ✅): the ladder INVERTS on the full benchmark** — fGAP falls 36.09 → 35.56 →
+35.13 → 35.29 → 34.35 → 34.38 as randomization is added, so the **frozen-room** (abl0) synth-only
+model is the best training material and **ties the all-real 397k model** (fGAP 36.09 vs ours 35.97 /
+paper 36.1; fGAP⁻ 54.28 / fACC 56.73 also top) — EXP-12's "painting-only can't reject distractors"
+gap was the price of randomization, not of synthetic data. Closed world is flat across the ladder
+(73.78–75.32 ≈ noise): the randomization cost is distractor-side. **Frame variety is the one harmful
+family** (abl3→abl4: −0.94 fGAP / −2.7 cGAP⁻ / −2.9 pGAP⁻ — frames are an identity cue); glass is
+the best closed-world rung (75.32). **Viewpoints dominate:** {60,90,120} ≈ all-5 at 60% data (fGAP
+−0.7), frontal-only collapses to the all-real baseline (cGAP⁻ 68.55 / fGAP 28.64). **1024²:** best
+closed row (75.41/76.35) but ≈ default on the full benchmark (34.48) — not worth ~3× render cost.
+Caveats: single seed/run per rung; ±2 noise on the 148-q slices (the inversion rests on the
+monotone 6-point fGAP trend over 1,003 queries). Suggested follow-up: rerun EXP-13's full-benchmark
+trainings with abl0 renders. Write-up:
+[`experiments-v2/dataset-ablation/`](experiments-v2/dataset-ablation/README.md).
 
 ## How to evaluate any model (the reusable recipe)
 ```bash

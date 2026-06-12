@@ -62,8 +62,9 @@ their weight.
 
 ## Results
 
-*(pending — jobs queued 2026-06-12, behind the EXP-13 from-scratch run; the default-v2 row is
-EXP-12's `synthall_v2` run, reused)*
+*(partial, 2026-06-12: all closed evals except `1024` are in, plus `ang1`'s full benchmark; the
+remaining full evals are running and the `1024` training is still going — see [Jobs](#jobs). The
+default-v2 row is EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
 still varies the painting, its wall scale, and the placard). **Factors:** `tex` = wall/floor/roof
@@ -78,15 +79,15 @@ recipe on the 12,403 real painting photos, no renders at all — EXP-8).
 
 | tex | light | glass | frame | jitter | res | angles | cGAP⁻ | cACC | fGAP | fGAP⁻ | fACC | pGAP⁻ |
 |:-:|:-:|:-:|:-:|:-:|--:|--:|--:|--:|--:|--:|--:|--:|
-| — | — | — | — | — | 512 | 5 | | | | | | |
-| ✓ | — | — | — | — | 512 | 5 | | | | | | |
-| ✓ | ✓ | — | — | — | 512 | 5 | | | | | | |
-| ✓ | ✓ | ✓ | — | — | 512 | 5 | | | | | | |
-| ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | | | | | | |
+| — | — | — | — | — | 512 | 5 | 73.78 | 75.00 | | | | |
+| ✓ | — | — | — | — | 512 | 5 | 73.94 | 75.00 | | | | |
+| ✓ | ✓ | — | — | — | 512 | 5 | 74.42 | 75.68 | | | | |
+| ✓ | ✓ | ✓ | — | — | 512 | 5 | 75.32 | 76.35 | | | | |
+| ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | 72.61 | 73.65 | | | | |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 5 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | | | | | | |
-| ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | | | | | | |
-| ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | | | | | | |
+| ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | 74.31 | 75.68 | | | | |
+| ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | 68.55 | 70.27 | 28.64 | 49.97 | 53.04 | 63.84 |
 | † | — | — | — | — | — | — | *67.18* | *70.27* | *28.83* | *49.08* | *52.14* | *61.83* |
 
 ## Jobs

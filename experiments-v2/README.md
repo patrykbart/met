@@ -32,12 +32,12 @@ v2 (24,490 images) regenerates the renders with the **Geometry-Nodes-randomized 
 
 ## The experiments
 
-| Experiment | Question (v2 edition) | Status |
+| Experiment | Question (v2 edition) | Status / headline |
 |---|---|---|
-| [`renders-as-queries/`](renders-as-queries/README.md) | Can the real-data-only Met model recognize the v2 renders — and did the new camera rig fix v1's per-view collapse? | running |
-| [`dinov3-embedding-analysis/`](dinov3-embedding-analysis/README.md) | How does a frozen DINOv3 organize the v2 renders (angle / floor / new jitter factors), and did the domain gap to real photos move? | running |
-| [`real-vs-synthetic-mix/`](real-vs-synthetic-mix/README.md) | Same 12,403-image real:synth blends + synth-only scaling, with v2 renders: does "synthetic-only wins" hold, and by how much? | running |
-| [`training-with-synthetic/`](training-with-synthetic/README.md) | Does adding the v2 renders to full-benchmark training still beat the paper's 36.1 (clean A/B + the two FT variants)? | running |
+| [`renders-as-queries/`](renders-as-queries/README.md) | Can the real-data-only Met model recognize the v2 renders — and did the new camera rig fix v1's per-view collapse? | ✅ frontal 90° ACC **74.5** full-DB / **84.8** paint-DB (≥ any v1 view); ±60° arc ends near-zero *by design* |
+| [`dinov3-embedding-analysis/`](dinov3-embedding-analysis/README.md) | How does a frozen DINOv3 organize the v2 renders (angle / floor / new jitter factors), and did the domain gap to real photos move? | ✅ identity still ~1,600× chance; angle softened by jitter; frontal now **ties** the studio↔real distance |
+| [`real-vs-synthetic-mix/`](real-vs-synthetic-mix/README.md) | Same 12,403-image real:synth blends + synth-only scaling, with v2 renders: does "synthetic-only wins" hold, and by how much? | ✅ v2 ≥ v1 everywhere on the full benchmark; synth-only scaling no longer plateaus — all-renders model **beats the all-real 397k model** on GAP⁻/ACC |
+| [`training-with-synthetic/`](training-with-synthetic/README.md) | Does adding the v2 renders to full-benchmark training still beat the paper's 36.1 (clean A/B + the two FT variants)? | 🟡 FT-synth **GAP 38.99**, FT-combined **38.66** (both > v1 + paper); from-scratch A/B still training (job 7372507) |
 
 Identical-by-construction comparisons: the blend/scaling subsets reuse the **same shuffle seeds and
 sizes** as v1 (12,403 budget; 15,504 / 18,604 / 24,490 scaling), the recognizer recipe and seeds are

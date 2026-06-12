@@ -21,7 +21,7 @@ yields the **same slot order** as `synthall_v2`, re-rendered. Training = the ste
 slice at fixed K=7/τ=50 (`slurm/eval_full.slurm`). The default-v2 row is EXP-12's `synthall_v2`
 run, **reused verbatim** (identical treatment, same dataset).
 
-Manifests + image roots: `scripts/build_ablation_data.py` (job 7397360) →
+Manifests + image roots: `scripts/build_ablation_data.py` →
 `data/gt_paint_synth_<tag>` + `data/aug_<tag>` (angle rows reuse `data/aug_v2`).
 
 ### Axis 1 — the procedural-randomization ladder (24,490 renders each, 512²)
@@ -62,8 +62,8 @@ their weight.
 
 ## Results
 
-*(near-complete, 2026-06-12: everything is in except the `1024` full benchmark — job 7397378 still
-running. The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
+*(near-complete, 2026-06-12: everything is in except the `1024` full benchmark, still running.
+The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
 still varies the painting, its wall scale, and the placard). **Factors:** `tex` = wall/floor/roof
@@ -89,23 +89,6 @@ recipe on the 12,403 real painting photos, no renders at all — EXP-8).
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | 68.55 | 70.27 | 28.64 | 49.97 | 53.04 | 63.84 |
 | † | — | — | — | — | — | — | *67.18* | *70.27* | *28.83* | *49.08* | *52.14* | *61.83* |
 
-## Jobs
-
-| row | train | closed eval | full eval |
-|---|---|---|---|
-| abl0 | 7397361 | 7397362 | 7397363 |
-| abl1 | 7397364 | 7397365 | 7397366 |
-| abl2 | 7397367 | 7397368 | 7397369 |
-| abl3 | 7397370 | 7397371 | 7397372 |
-| abl4 | 7397373 | 7397374 | 7397375 |
-| 1024 | 7397376 | 7397377 | 7397378 |
-| ang3 | 7397379 | 7397380 | 7397381 |
-| ang1 | 7397382 | 7397383 | 7397384 |
-
-Manifest prep = 7397360; models land in `data/models/r18SWSL_paint_synth_<tag>`, descriptors in
-`data/descriptors{,_full}_synth_<tag>`. Closed numbers = the `>> 2-fold mean` line of each
-`logs/met-ev-<tag>-*.out`; full numbers = the best-grid + `PAINT148` lines of `logs/met-full-<tag>-*.out`.
-
 ## How to reproduce
 
 ```bash
@@ -125,6 +108,10 @@ for tag in abl0 abl1 abl2 abl3 abl4 1024 ang3 ang1; do
       slurm/eval_full.slurm  data/models/r18SWSL_paint_synth_$tag 10 synth_$tag
 done
 ```
+
+Models land in `data/models/r18SWSL_paint_synth_<tag>`, descriptors in
+`data/descriptors{,_full}_synth_<tag>`; the table reads the `>> 2-fold mean` line of each closed
+eval and the best-grid + `PAINT148` lines of each full eval. Job ids: [`EXPERIMENTS.md` → EXP-14](../../EXPERIMENTS.md).
 
 ## Caveats
 

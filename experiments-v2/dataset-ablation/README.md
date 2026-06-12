@@ -66,15 +66,27 @@ their weight.
 The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
-still varies the painting, its wall scale, and the placard). **Factors:** `tex` = wall/floor/roof
-textures + floor material variety · `light` = light shape/spread variety · `glass` = glass sheet at
-p=0.25 · `frame` = frame molding/color variety · `jitter` = camera-pose jitter · `res` = render
-resolution · `angles` = arc views per painting (renders = 4,898 × angles; 3 = {60°, 90°, 120°},
-1 = {90°}). **Metrics:** `cGAP⁻`/`cACC` = **c**losed painting world (148 q vs the 12,403-photo paint
-DB, 2-fold CV); `fGAP`/`fGAP⁻`/`fACC` = **f**ull 397k benchmark (1,003 q + 18,316 distractors, K/τ
-tuned on val); `pGAP⁻` = the 148-**p**ainting slice of the full benchmark (fixed K=7/τ=50). Italics
-= reused results: the all-✓ 512/5 row is EXP-12's `synthall_v2`; † = the all-real reference (same
-recipe on the 12,403 real painting photos, no renders at all — EXP-8).
+still varies the painting, its wall scale, and the placard).
+
+**Factors** (✓ = randomization active in the renders):
+
+- `tex` — wall/floor/roof textures + floor material variety
+- `light` — light shape/spread variety
+- `glass` — glass sheet at p=0.25
+- `frame` — frame molding/color variety
+- `jitter` — camera-pose jitter
+- `res` — render resolution (px)
+- `angles` — arc views per painting: 5 = all, 3 = {60°, 90°, 120°}, 1 = {90°} (renders = 4,898 × angles)
+
+**Metrics** (the prefix says which evaluation):
+
+- `cGAP⁻`, `cACC` — **c**losed painting world: 148 real painting queries vs the 12,403-photo paint DB, K/τ by 2-fold CV
+- `fGAP`, `fGAP⁻`, `fACC` — **f**ull 397k benchmark: 1,003 Met queries + 18,316 distractors, K/τ tuned on val
+- `pGAP⁻` — the 148-**p**ainting slice of the full benchmark, fixed K=7/τ=50
+
+**Special rows:** *italics* = reused results (the all-✓ 512/5 row is EXP-12's `synthall_v2`);
+`†` = the all-real reference — the same recipe on the 12,403 real painting photos, no renders
+at all (EXP-8).
 
 | tex | light | glass | frame | jitter | res | angles | cGAP⁻ | cACC | fGAP | fGAP⁻ | fACC | pGAP⁻ |
 |:-:|:-:|:-:|:-:|:-:|--:|--:|--:|--:|--:|--:|--:|--:|

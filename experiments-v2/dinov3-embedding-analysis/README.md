@@ -64,9 +64,13 @@ nuisance DINOv3 clearly encodes (0.80); the GN-driven randomizations (frame colo
 shape, painting size) are not recorded in the metadata, so — like v1's lighting — they remain
 untestable.
 
-| coloured by camera angle (t-SNE / UMAP) | coloured by floor (t-SNE) |
-|---|---|
-| ![angle t-SNE](figures/proj_synth_angle_tsne.png) ![angle UMAP](figures/proj_synth_angle_umap.png) | ![floor t-SNE](figures/proj_synth_floor_tsne.png) |
+| | coloured by camera angle | coloured by floor material |
+|---|---|---|
+| **t-SNE** | ![angle t-SNE](figures/proj_synth_angle_tsne.png) | ![floor t-SNE](figures/proj_synth_floor_tsne.png) |
+| **UMAP** | ![angle UMAP](figures/proj_synth_angle_umap.png) | ![floor UMAP](figures/proj_synth_floor_umap.png) |
+
+*(Same 2×2 panel as the v1 doc: soft angle structure — visibly softer than v1's — and floor scattered
+at random in both projections.)*
 
 ## 2. How far is synthetic from real?
 

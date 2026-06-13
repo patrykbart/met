@@ -4,7 +4,7 @@ Running lab notebook: what we've done, the exact settings, results, and how to c
 Goal: beat the paper's best single model (**R18-SWSL Con-Syn+Real-closest, GAP 36.1**) by adding a
 synthetic gallery phone-photo dataset (+ a new method). Plan & targets-to-beat in `reference/README.md`.
 
-_Last updated: 2026-06-12 (EXP-14 done — dataset ablation: randomization **inverts** on the full benchmark, frozen-room synth-only ties the all-real model at fGAP 36.09; EXP-13 from-scratch run still training)._
+_Last updated: 2026-06-13 (EXP-14 done incl. `noframe` leave-one-out — randomization **inverts** on the full benchmark, frozen-room synth-only ties the all-real model at fGAP 36.09; EXP-13 from-scratch run still training)._
 
 ## Status snapshot
 
@@ -17,7 +17,7 @@ _Last updated: 2026-06-12 (EXP-14 done — dataset ablation: randomization **inv
 | 4 | Train/fine-tune **with synthetic data**, eval on real paintings | ✅ clean **from-scratch +synth = GAP 38.15** (+2.18 over step 1, +2.71 paint ACC), **beats paper 36.1** — synthetic data helps on its own |
 | 5 | New method | 🟡 **DINOv3 + geometric re-rank** (EXP-6): ViT-L+gate **GAP 53.07** (+4.9 over DINOv3 ZS, both GAP/GAP⁻ up); cross-domain mining (additional exp) running (7332307) |
 | 6 | **Dataset v2** (GN-randomized scene, arc cameras) — rerun EXP-3/7/8/4 | 🟡 EXP-10/11/12 ✅ (v2 ≥ v1 as training data everywhere; synthall **beats the all-real 397k model** on GAP⁻/ACC); EXP-13: FT-synth **GAP 38.99**, FT-combined 38.66 ✅, from-scratch training (7372507) |
-| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | ✅ EXP-14: randomization **hurts** the open-set benchmark (frozen room best, **fGAP 36.09** ≈ all-real 35.97/paper 36.1); viewpoints are the key ingredient (3≈5 angles, frontal-only collapses); frame variety harmful; 1024² no benchmark gain. 🟡 `noframe` leave-one-out row rendering (7398961→66) |
+| 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | ✅ EXP-14: randomization **hurts** the open-set benchmark (frozen room best, **fGAP 36.09** ≈ all-real 35.97/paper 36.1); viewpoints are the key ingredient (3≈5 angles, frontal-only collapses); frame variety harmful (leave-one-out `noframe` recovers +0.53 fGAP but still +1.2 below frozen room); 1024² no benchmark gain |
 
 ## Headline results
 All eval'd identically: multi-scale descriptors, **original 397k studio DB**, real test queries, full K×τ grid.
@@ -399,11 +399,14 @@ the best closed-world rung (75.32). **Viewpoints dominate:** {60,90,120} ≈ all
 −0.7), frontal-only collapses to the all-real baseline (cGAP⁻ 68.55 / fGAP 28.64). **1024²:** best
 closed row (75.41/76.35) but ≈ default on the full benchmark (34.48) — not worth ~3× render cost.
 Caveats: single seed/run per rung; ±2 noise on the 148-q slices (the inversion rests on the
-monotone 6-point fGAP trend over 1,003 queries). Suggested follow-up: rerun EXP-13's full-benchmark
-trainings with abl0 renders. **Leave-one-out row in flight (2026-06-12):**
-`visart-dataset-v2-noframe` = default config + `--bake-frames` (isolates the frame effect from the
-ladder's other end) — render array 7398961 + merge 7398962 (visart2026), chained prep 7398963 →
-train 7398964 → closed/full evals 7398965/7398966. Write-up:
+monotone 6-point fGAP trend over 1,003 queries). **Leave-one-out `noframe`** (`visart-dataset-v2-noframe`
+= default config + `--bake-frames`, render array 7398961 + merge 7398962, chained prep/train/evals
+7398963–66): **fGAP 34.91 / fGAP⁻ 54.06 / fACC 56.53 / pGAP⁻ 71.37 / closed 73.91** — dropping just
+the frame from the full default recovers +0.53 fGAP (confirming frame hurts from the ladder's other
+end), but stays +1.18 below the frozen room (abl0 36.09): frame is one harmful family among several,
+not the whole penalty. **The single best training material remains the frozen room, not
+default-minus-frame.** Suggested follow-up: rerun EXP-13's full-benchmark trainings (FT-synth 38.99)
+with the **abl0 frozen-room** renders. Write-up:
 [`experiments-v2/dataset-ablation/`](experiments-v2/dataset-ablation/README.md).
 
 ## How to evaluate any model (the reusable recipe)

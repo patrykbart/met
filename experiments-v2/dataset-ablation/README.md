@@ -19,9 +19,11 @@ lab notebook: [`EXPERIMENTS.md` → EXP-14](../../EXPERIMENTS.md).*
   painting classes and zero real photos.
 - **Viewpoints are the load-bearing ingredient.** 3 arc angles ≈ all 5 nearly everywhere at 60% of
   the data; frontal-only collapses to barely above the all-real baseline.
-- **Frame variety is the one clearly harmful family** (worst rung on both worlds); **1024²
-  rendering** buys the best closed-world score but nothing on the full benchmark — not worth 4×
-  the render cost.
+- **Frame variety is the one clearly harmful family** (worst rung on both worlds), confirmed by a
+  leave-one-out render: dropping just the frame from the full default recovers +0.53 fGAP — but
+  still lands +1.2 below the frozen room, so it's one harmful ingredient among several, not the
+  whole story. **1024² rendering** buys the best closed-world score but nothing on the full
+  benchmark — not worth 4× the render cost.
 
 ## Design — one treatment, nine rows
 
@@ -76,8 +78,8 @@ their weight.
 
 ## Results
 
-*(complete for the original nine rows, 2026-06-12; the leave-one-out `noframe` row is rendering +
-queued. The default-v2 row is EXP-12's `synthall_v2` run, reused.)*
+*(complete, 2026-06-12, all ten rows incl. the leave-one-out `noframe`. The default-v2 row is
+EXP-12's `synthall_v2` run, reused.)*
 
 One training per row, identified by its factor combination (the ladder is cumulative; every row
 still varies the painting, its wall scale, and the placard).
@@ -110,7 +112,7 @@ at all (EXP-8).
 | ✓ | ✓ | ✓ | — | — | 512 | 5 | 75.32 | 76.35 | 35.29 | 53.62 | 56.03 | 71.24 |
 | ✓ | ✓ | ✓ | ✓ | — | 512 | 5 | 72.61 | 73.65 | 34.35 | 52.10 | 54.74 | 68.32 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 5 | *74.38* | *75.68* | *34.38* | *53.78* | *56.63* | *70.98* |
-| ✓ | ✓ | ✓ | — | ✓ | 512 | 5 | | | | | | |
+| ✓ | ✓ | ✓ | — | ✓ | 512 | 5 | 73.91 | 75.00 | 34.91 | 54.06 | 56.53 | 71.37 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 | 5 | 75.41 | 76.35 | 34.48 | 52.12 | 54.64 | 68.36 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 3 | 74.31 | 75.68 | 33.70 | 53.71 | 56.53 | 70.51 |
 | ✓ | ✓ | ✓ | ✓ | ✓ | 512 | 1 | 68.55 | 70.27 | 28.64 | 49.97 | 53.04 | 63.84 |
@@ -129,10 +131,13 @@ at all (EXP-8).
    apparently the price of *randomization*: the frozen-room variant closes the whole gap
    (36.09 ≈ 35.97 ours / 36.1 paper) while keeping the painting-slice gains (pGAP⁻ 70.92 vs 61.83
    all-real).
-3. **Frame variety is the one clearly harmful ingredient**: abl3 → abl4 drops every metric
-   (−0.94 fGAP, −2.7 cGAP⁻, −2.9 pGAP⁻) — consistent with the frame being a stable per-painting
-   identity cue that randomization destroys. The glass sheet is the most *helpful* rung
-   closed-world (abl3 = 75.32, the best 512² row).
+3. **Frame variety is the one clearly harmful ingredient — confirmed from both ends.** Adding it on
+   the ladder (abl3 → abl4) drops every metric (−0.94 fGAP, −2.7 cGAP⁻, −2.9 pGAP⁻); the
+   **leave-one-out `noframe`** row (the full default config with *only* frame frozen) independently
+   *recovers* +0.53 fGAP over the default (34.91 vs 34.38), +0.28 fGAP⁻, +0.39 pGAP⁻ — two
+   independent measurements agreeing the frame costs ~0.5–0.9 fGAP. Consistent with the frame being
+   a stable per-painting identity cue that randomization destroys. The glass sheet is the most
+   *helpful* rung closed-world (abl3 = 75.32, the best 512² row).
 4. **Viewpoint count matters more than any scene factor.** {60°, 90°, 120°} matches all-5 within
    noise on everything but fGAP (33.70 vs 34.38) with 40% less data — the ±60° grazing views
    contribute mainly distractor rejection. Frontal-only loses ~6 closed points (68.55) and 5.7
@@ -140,11 +145,17 @@ at all (EXP-8).
 5. **1024² helps only where it isn't needed**: best closed-world row (75.41/76.35) but full-
    benchmark ≈ default (34.48 vs 34.38, fGAP⁻/fACC slightly lower) at ~3× render time and ~4× disk.
 
-Follow-ups: **(a)** the `noframe` leave-one-out row (in flight) checks the frame effect from the
-other end of the ladder — prediction if effects compose: ≈ abl3 on fGAP (~35.3, still below abl0),
-possibly the best 512² closed-world row; **(b)** regenerate the *full-benchmark* training mixes
-(EXP-13's FT-synth / from-scratch, currently using default v2) with the frozen-room renders — if
-the +1.7 fGAP transfers, the headline GAP 38.99 has room above it.
+**Removing frame variety helps but does not win.** The `noframe` row was the obvious "best of both
+worlds" candidate — keep every useful randomization, drop the one harmful family. It does land
+above the fully-randomized default (fGAP 34.91 vs 34.38), but it recovers only ~⅓ of the gap to the
+**frozen room** (abl0 = 36.09, still +1.18 ahead): frame is one harmful ingredient among several,
+and the other randomization families (textures/light/glass/jitter) carry the rest of the open-set
+penalty. Closed-world, `noframe` (73.91) is in the flat pack, not the top (abl3 = 75.32). So the
+single best training material here remains the **frozen room**, not "default-minus-frame".
+
+Follow-up this suggests: regenerate the *full-benchmark* training mixes (EXP-13's FT-synth /
+from-scratch, currently using default v2) with the **frozen-room** renders — if the +1.7 fGAP
+transfers, the headline GAP 38.99 has room above it.
 
 ## How to reproduce
 

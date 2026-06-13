@@ -69,13 +69,13 @@ harder viewpoints, pose jitter, glass/frame variety — more invariance to learn
 Same nested supersets as v1 (longer prefixes of the same shuffled pool): 12,403 (=0:100) → 15,504 →
 18,604 → all 24,490.
 
-| synth-only training images | closed GAP⁻ v1 | **v2** | full GAP v1 | **v2** | full GAP⁻ v1 | **v2** | full ACC v1 | **v2** | paint GAP⁻ (full DB) v1 | **v2** |
-|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| 12,403 (1×) | 72.47 | **73.47** | 31.32 | **32.75** | 51.47 | **52.37** | 54.04 | **54.94** | 70.04 | **71.94** |
-| 15,504 (1.25×) | 73.73 | 73.61 | 31.86 | **33.26** | 51.79 | **52.78** | 54.34 | **55.23** | 70.81 | **71.06** |
-| 18,604 (1.5×) | 74.39 | 73.48 | 32.18 | **33.62** | 51.81 | **53.18** | 54.24 | **55.73** | 70.93 | 69.87 |
-| **24,490 (≈2×, all)** | **75.09** | 74.38 | 32.68 | **34.38** | 51.94 | **53.78** | 54.34 | **56.63** | 70.90 | **70.98** |
-| *all-real baseline (12,403 real)* | *67.18* | | *28.83* | | *49.08* | | *52.14* | | *61.83* | |
+| synth-only training images | closed GAP⁻ v1 | **v2** | **closed ACC v2** | full GAP v1 | **v2** | full GAP⁻ v1 | **v2** | full ACC v1 | **v2** | paint GAP⁻ (full DB) v1 | **v2** |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 12,403 (1×) | 72.47 | **73.47** | 75.00 | 31.32 | **32.75** | 51.47 | **52.37** | 54.04 | **54.94** | 70.04 | **71.94** |
+| 15,504 (1.25×) | 73.73 | 73.61 | 75.00 | 31.86 | **33.26** | 51.79 | **52.78** | 54.34 | **55.23** | 70.81 | **71.06** |
+| 18,604 (1.5×) | 74.39 | 73.48 | 75.00 | 32.18 | **33.62** | 51.81 | **53.18** | 54.24 | **55.73** | 70.93 | 69.87 |
+| **24,490 (≈2×, all)** | **75.09** | 74.38 | **75.68** | 32.68 | **34.38** | 51.94 | **53.78** | 54.34 | **56.63** | 70.90 | **70.98** |
+| *all-real baseline (12,403 real)* | *67.18* | | *70.27* | *28.83* | | *49.08* | | *52.14* | | *61.83* | |
 
 ![Synth-only scaling](figures/fig_synth_scaling.png)
 
@@ -90,7 +90,9 @@ Same nested supersets as v1 (longer prefixes of the same shuffled pool): 12,403 
 2. **Closed world: v2 starts higher, scales flatter.** v2's 1× point (73.47) already exceeds v1's
    1.25× point; from there it adds only +0.9 (74.38 at all renders) where v1 added +2.6 (75.09). The
    148-photo noise floor (~±2) cautions against reading the v1−v2 tail difference too hard; what is
-   solid is that both scale arms sit far above the all-real baseline (+7 GAP⁻).
+   solid is that both scale arms sit far above the all-real baseline (+7 GAP⁻). Closed-world **ACC**
+   is essentially pinned (75.00 across 1×–1.5×, 75.68 at all renders, vs 70.27 all-real): one hit on
+   148 queries ≈ 0.68 pts, too coarse to track the scaling trend — read GAP⁻ here.
 3. **The painting slice on the full DB is flat-noisy in v2** (71.94 → 70.98 across the arm, fixed
    K=7/τ=50) — its 1× value is already at the v1 arm's ceiling.
 

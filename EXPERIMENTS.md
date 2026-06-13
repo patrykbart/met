@@ -360,8 +360,8 @@ incl. the PAINT148 slice — no separate cls batch needed). 100:0 + references r
 each blend ≥ v1. **Full benchmark:** v2 ≥ v1 on every metric at every blend, margin grows with synth
 fraction — 0:100 GAP **32.75** (v1 31.32). **Scaling (synth-only):** v1's plateau is **gone** — full
 GAP⁻ 52.37→**53.78**, ACC 54.94→**56.63** at all 24,490 renders, **beating the all-real 397k model**
-(52.14/54.64) on both; GAP 34.38 still < 35.97 (distractors). Closed scaling tops at 74.38 (v1 75.09;
-within the ±2 noise floor). Oracle audit ≤0.33 everywhere ✓. **Finding:** every EXP-8 conclusion
+(52.14/54.64) on both; GAP 34.38 still < 35.97 (distractors). Closed scaling tops at 74.38 GAP⁻ /
+75.68 ACC (v1 75.09; within the ±2 noise floor; closed ACC pinned at 75.00 below all renders). Oracle audit ≤0.33 everywhere ✓. **Finding:** every EXP-8 conclusion
 holds with v2, slightly stronger — and per image the v2 renders are worth *more* as training data,
 despite the hard ±60° views. Write-up: [`experiments-v2/real-vs-synthetic-mix/`](experiments-v2/real-vs-synthetic-mix/README.md).
 

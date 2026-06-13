@@ -19,11 +19,11 @@ lab notebook: [`EXPERIMENTS.md` → EXP-14](../../EXPERIMENTS.md).*
   painting classes and zero real photos.
 - **Viewpoints are the load-bearing ingredient.** 3 arc angles ≈ all 5 nearly everywhere at 60% of
   the data; frontal-only collapses to barely above the all-real baseline.
-- **Frame variety is the one clearly harmful family** (worst rung on both worlds), confirmed by a
-  leave-one-out render: dropping just the frame from the full default recovers +0.53 fGAP — but
-  still lands +1.2 below the frozen room, so it's one harmful ingredient among several, not the
-  whole story. **1024² rendering** buys the best closed-world score but nothing on the full
-  benchmark — not worth 4× the render cost.
+- **Frame variety is the one family consistently harmful on the full benchmark** — both the ladder
+  and a leave-one-out render agree it costs ~0.5–0.9 fGAP. But on the *pure closed-painting* metric
+  the two measurements disagree in sign (a one-query-of-148 swing), so the frame effect is a
+  full-DB / non-painting phenomenon, not a measurable painting-domain one. **1024² rendering** buys
+  the best closed-world score but nothing on the full benchmark — not worth 4× the render cost.
 
 ## Design — one treatment, nine rows
 
@@ -131,13 +131,16 @@ at all (EXP-8).
    apparently the price of *randomization*: the frozen-room variant closes the whole gap
    (36.09 ≈ 35.97 ours / 36.1 paper) while keeping the painting-slice gains (pGAP⁻ 70.92 vs 61.83
    all-real).
-3. **Frame variety is the one clearly harmful ingredient — confirmed from both ends.** Adding it on
-   the ladder (abl3 → abl4) drops every metric (−0.94 fGAP, −2.7 cGAP⁻, −2.9 pGAP⁻); the
-   **leave-one-out `noframe`** row (the full default config with *only* frame frozen) independently
-   *recovers* +0.53 fGAP over the default (34.91 vs 34.38), +0.28 fGAP⁻, +0.39 pGAP⁻ — two
-   independent measurements agreeing the frame costs ~0.5–0.9 fGAP. Consistent with the frame being
-   a stable per-painting identity cue that randomization destroys. The glass sheet is the most
-   *helpful* rung closed-world (abl3 = 75.32, the best 512² row).
+3. **Frame variety is harmful on the open/full-DB metrics; its pure-closed-painting effect is within
+   noise.** Adding it on the ladder (abl3 → abl4) drops *every* metric, but only the **full-DB**
+   metrics survive the cross-check against the leave-one-out `noframe` row (full default with *only*
+   the frame frozen): on **fGAP** both agree (ladder −0.94, LOO −0.53 → ~0.5–0.9), and fGAP⁻ / pGAP⁻
+   are negative both ways. On the **pure closed paint-DB** the two *disagree in sign* — ladder
+   abl3 → abl4 = −2.7 cACC, but LOO noframe → default = **+0.7 cACC** (one query of 148) — so the
+   closed-world frame effect is unmeasurable at this sample size; the robust story is the full-DB
+   one. Plausibly the frame is a per-painting identity cue whose randomization mainly bleeds
+   paintings into the non-painting DB (hence full-DB, not closed-DB). The glass sheet gives the
+   nominal closed-world peak (abl3 = 75.32), also within noise.
 4. **Viewpoint count matters more than any scene factor.** {60°, 90°, 120°} matches all-5 within
    noise on everything but fGAP (33.70 vs 34.38) with 40% less data — the ±60° grazing views
    contribute mainly distractor rejection. Frontal-only loses ~6 closed points (68.55) and 5.7

@@ -1,4 +1,4 @@
-# Fine-tuning a strong backbone: real vs synthetic, on DINOv3
+# DINOv3 fine-tune: real vs synthetic paintings
 
 *Does our synthetic gallery data help a **strong foundation backbone**, the way it helps the R18
 recognizer ([`real-vs-synthetic-mix`](../real-vs-synthetic-mix/README.md))? We LoRA-fine-tune

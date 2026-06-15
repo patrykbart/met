@@ -440,7 +440,7 @@ effect (renders ≈ real gallery queries; studio photos ≠), not data count. **
 scaling** (24,490 ≈ 12,403 both readouts; closed +0→+1.4). Frozen ZS-CLS reproduces EXP-6, confirming
 the same method. **Caveat:** recipe inherited from R18-SWSL (lr 1e-7 / 3 ep / margin 1.8), untuned for
 ViT-L+LoRA — "FT hurts strong CLS" is recipe-conditional; the synth-vs-real contrast is robust to it.
-Write-up: [`experiments-v2/dinov3-real-vs-synthetic/`](experiments-v2/dinov3-real-vs-synthetic/README.md).
+Write-up: [`experiments-v2/dinov3-finetune/`](experiments-v2/dinov3-finetune/README.md).
 
 ## How to evaluate any model (the reusable recipe)
 ```bash

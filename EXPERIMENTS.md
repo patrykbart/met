@@ -4,7 +4,7 @@ Running lab notebook: what we've done, the exact settings, results, and how to c
 Goal: beat the paper's best single model (**R18-SWSL Con-Syn+Real-closest, GAP 36.1**) by adding a
 synthetic gallery phone-photo dataset (+ a new method). Plan & targets-to-beat in `reference/README.md`.
 
-_Last updated: 2026-06-13 (EXP-14 done incl. `noframe` leave-one-out — randomization **inverts** on the full benchmark, frozen-room synth-only ties the all-real model at fGAP 36.09; EXP-13 from-scratch run still training)._
+_Last updated: 2026-06-15 (EXP-15 ✅ — DINOv3 ViT-L real-vs-synthetic LoRA fine-tune, both readouts: synthetic > real as FT data everywhere; frozen CLS is best overall (GAP 51.34, reproduces EXP-6); on the weak patch-mean readout synthetic FT helps (+6.6 GAP⁻) while real hurts)._
 
 ## Status snapshot
 
@@ -18,6 +18,7 @@ _Last updated: 2026-06-13 (EXP-14 done incl. `noframe` leave-one-out — randomi
 | 5 | New method | 🟡 **DINOv3 + geometric re-rank** (EXP-6): ViT-L+gate **GAP 53.07** (+4.9 over DINOv3 ZS, both GAP/GAP⁻ up); cross-domain mining (additional exp) running (7332307) |
 | 6 | **Dataset v2** (GN-randomized scene, arc cameras) — rerun EXP-3/7/8/4 | 🟡 EXP-10/11/12 ✅ (v2 ≥ v1 as training data everywhere; synthall **beats the all-real 397k model** on GAP⁻/ACC); EXP-13: FT-synth **GAP 38.99**, FT-combined 38.66 ✅, from-scratch training (7372507) |
 | 7 | **Dataset ablation** — which v2 ingredients drive the gain (randomization ladder / resolution / viewpoints) | ✅ EXP-14: randomization **hurts** the open-set benchmark (frozen room best, **fGAP 36.09** ≈ all-real 35.97/paper 36.1); viewpoints are the key ingredient (3≈5 angles, frontal-only collapses); frame variety harmful on the full benchmark (closed-paint effect within noise — sign flips between ladder & leave-one-out); 1024² no benchmark gain |
+| 8 | **DINOv3 + synthetic FT** (EXP-6 follow-up): does synthetic data help a **strong backbone**? | ✅ EXP-15: synthetic > real as FT data in **both** readouts/all protocols; frozen **CLS** is best overall (**GAP 51.34** = EXP-6's 48.16-method); on the weak **patch-mean** readout synth FT **helps** (+6.6 fGAP⁻), real hurts — the "does FT beat frozen?" answer is set by baseline strength, not the data |
 
 ## Headline results
 All eval'd identically: multi-scale descriptors, **original 397k studio DB**, real test queries, full K×τ grid.
@@ -413,6 +414,34 @@ default-minus-frame.** Suggested follow-up: rerun EXP-13's full-benchmark traini
 with the **abl0 frozen-room** renders. Write-up:
 [`experiments-v2/dataset-ablation/`](experiments-v2/dataset-ablation/README.md).
 
+### EXP-15 — DINOv3 fine-tune: real vs synthetic paintings ✅
+Does the synthetic data help a **strong foundation backbone** (EXP-6's open question)? LoRA-fine-tune
+**DINOv3 ViT-L** on three painting sets — real (`gt_paint`, 12,403) / budget synth v2
+(`gt_paint_mix_0r100s_v2`, 12,403) / all synth v2 (`gt_paint_synthall_v2`, 24,490) — vs a frozen
+zero-shot baseline, eval'd with EXP-8/12's two protocols (closed paint world + full 397k benchmark +
+PAINT148 slice). Run for **both** DINOv3 readouts: **CLS** (the EXP-6 representation, ZS GAP 48.16) and
+**mean-pooled patch tokens** — the conclusion flips between them. New code: `--dino_readout {cls,patch}`
+threaded siamese_network → Embedder → DINOv3Trunk (+ `extract_dino_ckpt.py --zeroshot/--dino-readout`);
+`slurm/dino_paint_{train,eval,eval_zs}.slurm` (readout-suffixed dirs so cls/patch don't collide).
+Trains 7404263-65 (CLS) / 7428311-13 (patch); evals incl. ZS 7404259 / 7428310. Extract `.venv-dino`, eval `.venv`.
+
+**Synthetic > real as FT data in BOTH readouts, every protocol/metric** (CLS closed GAP⁻ 89.96 vs
+88.37, full GAP⁻ 69.19 vs 62.85; patch closed 56.65 vs 38.76, full GAP⁻ 39.05 vs 27.13) — the robust,
+representation-invariant result. **But "does FT beat frozen?" is set by baseline strength:**
+
+| readout | frozen ZS (full GAP/GAP⁻/ACC) | best FT arm | FT vs frozen |
+|---|---|---|---|
+| **CLS** (EXP-6 method) | **51.34 / 72.31 / 76.57** (≈ EXP-6 48.16/72.14/77.07) | synthv2 44.80 / 69.19 / 73.48 | **erodes** (synth GAP⁻ −3.1 vs real −9.5) |
+| **patch-mean** | 11.25 / 32.42 / 38.68 | synthv2 16.29 / 39.05 / 45.56 | **helps** (synth +5.0 / +6.6 / +6.9; real −0.7 / −5.3) |
+
+Closed world: CLS ZS 92.21 (synth FT 89.96, real 88.37); patch ZS 41.96 (synth FT **56.65→58.00**,
+real 38.76). **Real-data FT is net-negative in both readouts** — the synthetic advantage is a domain
+effect (renders ≈ real gallery queries; studio photos ≠), not data count. **No full-benchmark
+scaling** (24,490 ≈ 12,403 both readouts; closed +0→+1.4). Frozen ZS-CLS reproduces EXP-6, confirming
+the same method. **Caveat:** recipe inherited from R18-SWSL (lr 1e-7 / 3 ep / margin 1.8), untuned for
+ViT-L+LoRA — "FT hurts strong CLS" is recipe-conditional; the synth-vs-real contrast is robust to it.
+Write-up: [`experiments-v2/dinov3-real-vs-synthetic/`](experiments-v2/dinov3-real-vs-synthetic/README.md).
+
 ## How to evaluate any model (the reusable recipe)
 ```bash
 # GPU job: extract MS descriptors (original studio DB + real queries) then full-grid + paintings eval
@@ -450,6 +479,7 @@ sbatch --job-name=met-fteval-<name> slurm/extract_eval_ft.slurm <combined|synth>
 - `reference/README.md` — paper targets + method↔`pairs_type` mapping.
 - **EXP-10..13 (dataset v2):** the same scripts/jobs with dataset-root/suffix params (`--syn/--suffix`, `SYNTH_DS`/`SYNTH_OUT`, positional slurm args; defaults = v1) + `scripts/plot_mixing_report.py --v2`; write-ups in `experiments-v2/`.
 - **EXP-14** (dataset ablation): `scripts/build_ablation_data.py` (fixed 8-row ladder → manifests + im_roots; reuses `paint_train`/`paint_eval`/`eval_full` slurm jobs).
+- **EXP-15** (DINOv3 real-vs-synth fine-tune): `--dino_readout {cls,patch}` flag threaded `siamese_network`→`Embedder`→`DINOv3Trunk` (CLS readout returns `(B,D,1,1)`) + `extract_dino_ckpt.py --zeroshot/--dino-readout`; `slurm/dino_paint_train.slurm`, `slurm/dino_paint_eval.slurm` (closed+full+paint slice), `slurm/dino_paint_eval_zs.slurm` (frozen baseline). Run in `.venv-dino` (extract) + `.venv` (eval).
 
 **Local only (git-ignored `data/`):**
 - `data/images`, `data/ground_truth` — dataset symlinks. `data/aug/images`, `data/gt_aug`, `data/gt_synth` — augmented training wiring.
@@ -458,4 +488,5 @@ sbatch --job-name=met-fteval-<name> slurm/extract_eval_ft.slurm <combined|synth>
 - `data/synth_dino/` — EXP-7: synthetic + real DINOv3 ViT-L feats, records, `analysis/` (summary.json + figures).
 - **v2 (suffix `_v2`):** `data/{aug,gt_aug,gt_synth}_v2`, `data/gt_paint_{mix_*,synth*}_v2` manifests; `data/descriptors/synthetic_v2` (EXP-10 jsons), `data/synth_dino_v2` (EXP-11), `data/descriptors{,_full}_*_v2` + `data/models/r18SWSL_{paint_*,ft_*,scratch_synth}_v2` (EXP-12/13).
 - **EXP-14:** `data/gt_paint_synth_<tag>` manifests + `data/aug_<tag>` im_roots (tags `abl0..abl4,1024,ang3,ang1`), `data/descriptors{,_full}_synth_<tag>`, `data/models/r18SWSL_paint_synth_<tag>`.
+- **EXP-15:** `data/models/dinov3L_lora_{real,synthv2,synthv2_all}` (CLS) + `…_patch` (patch-mean); `data/descriptors_dino_{paint,full}_{zs,real,synthv2,synthv2_all}` (CLS) + `…_patch`. Built from the existing `data/gt_paint{,_mix_0r100s_v2,_synthall_v2}` + `data/aug_v2`; DINOv3 weights reuse the art-research HF cache.
 - `data/torch_home/` — cached SWSL weights. `data/MetObjects.csv` (~303 MB). `data/synth_gen/` — painting-class lists.

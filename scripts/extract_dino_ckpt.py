@@ -35,8 +35,12 @@ def extract(net, ds, name, bs, workers):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--net", default="dinov3_vitl16")
-    ap.add_argument("--netpath", required=True, help="adapted checkpoint")
+    ap.add_argument("--netpath", default=None, help="adapted checkpoint (omit with --zeroshot)")
     ap.add_argument("--lora", action="store_true")
+    ap.add_argument("--zeroshot", action="store_true",
+                    help="frozen DINOv3, no projector, no checkpoint -- the ZS baseline")
+    ap.add_argument("--dino-readout", default="cls", choices=["cls", "patch"],
+                    help="token read out: 'cls' (EXP-6 method, GAP 48.16) or 'patch' (mean-pooled grid)")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--info-dir", default="data/ground_truth")
     ap.add_argument("--im-root", default="data/")
@@ -45,18 +49,30 @@ def main():
     ap.add_argument("--num-workers", type=int, default=8)
     args = ap.parse_args()
 
-    print(f"loading checkpoint: {args.netpath}", flush=True)
-    ckpt = torch.load(args.netpath, weights_only=False, map_location="cuda")
-    sd = ckpt["state_dict"] if isinstance(ckpt, dict) and "state_dict" in ckpt else ckpt
+    if args.zeroshot:
+        # frozen DINOv3, no FC projector -> same mean-pooled-patch representation the fine-tuned
+        # arms use (minus the trained projector), so it is an apples-to-apples FT-vs-ZS control.
+        print(f"zero-shot: frozen DINOv3, no projector, no checkpoint, readout={args.dino_readout}", flush=True)
+        model = siamese_network(args.net, emb_proj=False, lora=False, dino_img_size=args.imsize,
+                                dino_readout=args.dino_readout)
+        net = model.backbone.cuda().eval()
+        print(f"built ZS backbone; outputdim={net.meta['outputdim']}", flush=True)
+    else:
+        if args.netpath is None:
+            sys.exit("--netpath is required unless --zeroshot")
+        print(f"loading checkpoint: {args.netpath}", flush=True)
+        ckpt = torch.load(args.netpath, weights_only=False, map_location="cuda")
+        sd = ckpt["state_dict"] if isinstance(ckpt, dict) and "state_dict" in ckpt else ckpt
 
-    model = siamese_network(args.net, emb_proj=True, lora=args.lora, dino_img_size=args.imsize)
-    # projector bias is saved as (1,D) from PCA init; reshape target to match before load
-    _bk = "backbone.projector.bias"
-    if _bk in sd and model.state_dict()[_bk].shape != sd[_bk].shape:
-        model.backbone.projector.bias.data = model.backbone.projector.bias.data.reshape(sd[_bk].shape)
-    model.load_state_dict(sd)
-    net = model.backbone.cuda().eval()
-    print(f"loaded; outputdim={net.meta['outputdim']}  lora={args.lora}", flush=True)
+        model = siamese_network(args.net, emb_proj=True, lora=args.lora, dino_img_size=args.imsize,
+                                dino_readout=args.dino_readout)
+        # projector bias is saved as (1,D) from PCA init; reshape target to match before load
+        _bk = "backbone.projector.bias"
+        if _bk in sd and model.state_dict()[_bk].shape != sd[_bk].shape:
+            model.backbone.projector.bias.data = model.backbone.projector.bias.data.reshape(sd[_bk].shape)
+        model.load_state_dict(sd)
+        net = model.backbone.cuda().eval()
+        print(f"loaded; outputdim={net.meta['outputdim']}  lora={args.lora}", flush=True)
 
     tf = augmentation("augment_inference_resize", args.imsize)
     splits = {

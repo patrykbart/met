@@ -10,13 +10,14 @@ class siamese_network(nn.Module):
 	'''
 
 	def __init__(self,backbone,pooling = "gem",pretrained = True,
-					emb_proj = False,init_emb_projector= None,lora = False,dino_img_size = 512):
+					emb_proj = False,init_emb_projector= None,lora = False,dino_img_size = 512,
+					dino_readout = 'cls'):
 
 		super(siamese_network,self).__init__()
 
 		net = Embedder(backbone,gem_p = 3.0,pretrained_flag = pretrained,
 						projector = emb_proj,init_projector = init_emb_projector,
-						lora = lora,dino_img_size = dino_img_size)
+						lora = lora,dino_img_size = dino_img_size,dino_readout = dino_readout)
 
 		self.backbone = net	#the backbone produces l2 normalized descriptors
 

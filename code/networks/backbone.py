@@ -49,14 +49,16 @@ def gem(x, p=3, eps=1e-6):
 
 class DINOv3Trunk(nn.Module):
 	'''Wraps a HuggingFace DINOv3 ViT so it plugs into Embedder exactly like a conv
-	trunk: forward(img) -> (B, D, g, g) feature map of patch tokens, consumed by the
-	existing pool + projector unchanged. The input is resized to img_size (a multiple
+	trunk: forward(img) -> (B, D, g, g), consumed by the existing pool + projector
+	unchanged. readout='cls' (default) returns the global CLS token as (B,D,1,1) -- the
+	representation the EXP-6 reproduction used (full Met GAP 48.16); readout='patch'
+	returns the mean-poolable patch grid. The input is resized to img_size (a multiple
 	of 16) so the patch grid g = img_size//16 is fixed. Optional LoRA adapters (peft)
 	for parameter-efficient fine-tuning; otherwise the backbone is frozen (head-only).
 	transformers/peft are imported lazily so backbone.py still imports in the R18 venv.
 	'''
 
-	def __init__(self, hf_name, img_size = 512, lora = False, lora_r = 16, lora_alpha = 32):
+	def __init__(self, hf_name, img_size = 512, lora = False, lora_r = 16, lora_alpha = 32, readout = 'cls'):
 
 		super(DINOv3Trunk, self).__init__()
 
@@ -64,6 +66,7 @@ class DINOv3Trunk(nn.Module):
 
 		self.patch = 16
 		self.img_size = (int(img_size) // self.patch) * self.patch   # must be a multiple of patch
+		self.readout = readout   # 'cls' = global CLS token (EXP-6 reproduction, full GAP 48.16); 'patch' = mean-pooled patch grid
 
 		model = AutoModel.from_pretrained(hf_name)
 
@@ -88,6 +91,13 @@ class DINOv3Trunk(nn.Module):
 								mode = "bilinear", align_corners = False)
 
 		tok = self.model(pixel_values = img).last_hidden_state   # (B, prefix + P, D)
+
+		if self.readout == 'cls':
+			# global CLS token (index 0), the representation the EXP-6 DINOv3 reproduction used
+			# (full Met GAP 48.16). Shape (B,D,1,1) so the Embedder's AdaptiveAvgPool2d is a no-op.
+			cls = tok[:, 0, :]
+			return cls[:, :, None, None]
+
 		g = self.img_size // self.patch
 		patches = tok[:, -(g * g):, :]                           # last g*g tokens = patch grid
 		B, _, D = patches.shape
@@ -102,7 +112,7 @@ class Embedder(nn.Module):
 	that can be initialized with the result of PCAw.
 	'''
 
-	def __init__(self,architecture,gem_p = 3,pretrained_flag = True,projector = False,init_projector = None,lora = False,dino_img_size = 512):
+	def __init__(self,architecture,gem_p = 3,pretrained_flag = True,projector = False,init_projector = None,lora = False,dino_img_size = 512,dino_readout = 'cls'):
 		'''The FC layer is called projector.
 		'''
 
@@ -116,7 +126,7 @@ class Embedder(nn.Module):
 
 		elif architecture.startswith("dinov3"):
 			#frozen DINOv3 ViT (optionally +LoRA); patch tokens -> (B,D,g,g) feature map
-			self.backbone = DINOv3Trunk(DINOV3_HF[architecture], img_size = dino_img_size, lora = lora)
+			self.backbone = DINOv3Trunk(DINOV3_HF[architecture], img_size = dino_img_size, lora = lora, readout = dino_readout)
 
 		else:
 

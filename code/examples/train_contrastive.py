@@ -64,6 +64,7 @@ def main():
 	parser.add_argument('--emb_proj', action='store_true') #if the backbone will also have an FC layer
 	parser.add_argument('--pca', action='store_true') #additionaly initialize FC layer with pca
 	parser.add_argument('--lora', action='store_true') #DINOv3: train LoRA adapters (else head-only: frozen backbone, train projector)
+	parser.add_argument('--dino_readout', default='cls', choices=['cls','patch']) #DINOv3 token read out: 'cls' (EXP-6 method, GAP 48.16) or 'patch' (mean-pooled grid)
 	parser.add_argument('--seed', default=None, type=int)
 	parser.add_argument('--init_descr', type = str, default= None) #descriptors that are output by the backbone before training; should be singlescale
 	parser.add_argument('--info_dir',default=None, type=str, help = 'directory where ground truth is stored') 
@@ -133,7 +134,7 @@ def main():
 	else:
 		print("extracting initial descriptors")
 		train_descr = extract_embeddings(siamese_network(args.net,pooling = "gem",
-			pretrained = args.pretrained,lora = args.lora,dino_img_size = args.imsize).backbone.cuda(),train_infer_loader,ms = [1],msp = 1.0)
+			pretrained = args.pretrained,lora = args.lora,dino_img_size = args.imsize,dino_readout = args.dino_readout).backbone.cuda(),train_infer_loader,ms = [1],msp = 1.0)
 
 
 	if args.emb_proj: #in this case the backbone contains the optional FC layer
@@ -167,7 +168,7 @@ def main():
 	#initialize the model and move it to the gpu
 	model = siamese_network(args.net,pooling = "gem",pretrained = args.pretrained,
 				emb_proj = args.emb_proj,init_emb_projector = PCA_stats,
-				lora = args.lora,dino_img_size = args.imsize).cuda()
+				lora = args.lora,dino_img_size = args.imsize,dino_readout = args.dino_readout).cuda()
 
 	if args.init_weights is not None:
 		print("loading init weights (fine-tune) from {}".format(args.init_weights))

@@ -1,8 +1,8 @@
 # Experiments — synthetic dataset **v2**
 
 Reproductions of the four synthetic-data experiments on **v2 of the synthetic gallery dataset**
-(`/mnt/storage_6/project_data/pl0896-03/visart-dataset-v2`), plus one **new v2-only experiment**
-(the dataset ablation). Same task, metrics, protocol, models, and budgets as the originals in
+(`/mnt/storage_6/project_data/pl0896-03/visart-dataset-v2`), plus **two new v2-only experiments**
+(the dataset ablation and a DINOv3 fine-tuning study). Same task, metrics, protocol, models, and budgets as the originals in
 [`../experiments/`](../experiments/README.md) — **only the synthetic dataset changes** — so every
 v1↔v2 difference is attributable to the regenerated renders. The metric definitions
 (GAP / GAP⁻ / ACC / R@k) and the shared evaluation protocol are defined once in the
@@ -40,10 +40,11 @@ v2 (24,490 images) regenerates the renders with the **Geometry-Nodes-randomized 
 | [`real-vs-synthetic-mix/`](real-vs-synthetic-mix/README.md) | Same 12,403-image real:synth blends + synth-only scaling, with v2 renders: does "synthetic-only wins" hold, and by how much? | ✅ v2 ≥ v1 everywhere on the full benchmark; synth-only scaling no longer plateaus — all-renders model **beats the all-real 397k model** on GAP⁻/ACC |
 | [`training-with-synthetic/`](training-with-synthetic/README.md) | Does adding the v2 renders to full-benchmark training still beat the paper's 36.1 (clean A/B + the two FT variants)? | 🟡 FT-synth **GAP 38.99**, FT-combined **38.66** (both > v1 + paper); from-scratch A/B still training (job 7372507) |
 | [`dataset-ablation/`](dataset-ablation/README.md) | *(new, v2-only)* Which dataset ingredients drive the gain — the procedural-randomization ladder (frozen room → +tex → +light → +glass → +frame → +cam jitter), 1024² rendering, viewpoint count, + a frame leave-one-out? Each variant gets EXP-12's synth-only all-renders treatment. | ✅ randomization **inverts** on the full benchmark — frozen-room synth-only **fGAP 36.09** ties the all-real 397k model; viewpoints are the key ingredient; frame variety harmful on the full benchmark (closed-paint effect within noise); 1024² no benchmark gain |
+| [`dinov3-real-vs-synthetic/`](dinov3-real-vs-synthetic/README.md) | *(new, v2-only)* Does the synthetic data help a **strong foundation backbone**? LoRA-fine-tune DINOv3 ViT-L on real / budget-synth / all-synth paintings vs frozen zero-shot, in both DINOv3 readouts (CLS / patch-mean), tested with EXP-12's two protocols. | ✅ synthetic > real as FT data **everywhere**; frozen **CLS** best overall (full GAP 51.34, reproduces EXP-6); on the weak **patch-mean** readout synth FT **helps** (+6.6 GAP⁻) while real hurts — "FT beats frozen" depends on baseline strength |
 
 Identical-by-construction comparisons: the blend/scaling subsets reuse the **same shuffle seeds and
 sizes** as v1 (12,403 budget; 15,504 / 18,604 / 24,490 scaling), the recognizer recipe and seeds are
 unchanged, the all-real points (step-1 baseline, 100:0 blend) are **reused from v1** since they contain
 no synthetic data, and every evaluation runs on the same real queries/databases as v1.
 
-Raw log, job ids, and exact commands: [`../EXPERIMENTS.md`](../EXPERIMENTS.md) (EXP-10…EXP-13).
+Raw log, job ids, and exact commands: [`../EXPERIMENTS.md`](../EXPERIMENTS.md) (EXP-10…EXP-15).

@@ -14,13 +14,11 @@ and evaluation protocol left completely **unchanged**. The renders attack both d
 directly: they look like visitor photos (perspective, frame, glass, gallery lighting), and they
 give single-image classes extra views.
 
-![Same recipe + synthetic data: every metric improves](experiments/training-with-synthetic/figures/baseline_vs_synth.png)
-
 ## Results so far
 
 Full benchmark: 397k-image database, 19,319 test queries (1,003 real + 18,316 distractors),
 multi-scale descriptors, kNN classifier with K and τ tuned on the validation set over the full
-grid. **GAP / GAP⁻ / ACC are defined once in [`experiments/README.md`](experiments/README.md)**;
+grid. **GAP / GAP⁻ / ACC are defined once in [`experiments-v2/README.md`](experiments-v2/README.md)**;
 GAP (open-set, distractors included) is the headline metric. The two right columns score only the
 **148 painting test queries** — the classes the synthetic data covers — on the same full database.
 
@@ -32,19 +30,19 @@ GAP (open-set, distractors included) is the headline metric. The two right colum
 
 The only change between the last two rows is adding the renders to the training set — no new
 method, no extra real data. Main write-up:
-[`experiments/training-with-synthetic/`](experiments/training-with-synthetic/README.md).
+[`experiments-v2/training-with-synthetic/`](experiments-v2/training-with-synthetic/README.md).
 Supporting experiments:
 
-- [`renders-as-queries`](experiments/renders-as-queries/README.md) — can the baseline model (trained
+- [`renders-as-queries`](experiments-v2/renders-as-queries/README.md) — can the baseline model (trained
   on real data only) recognize the renders at all? Yes for well-framed views — and this exposed the
   camera-rig framing bug below.
-- [`real-vs-synthetic-mix`](experiments/real-vs-synthetic-mix/README.md) — how the real↔synthetic
+- [`real-vs-synthetic-mix`](experiments-v2/real-vs-synthetic-mix/README.md) — how the real↔synthetic
   training mix and the amount of synthetic data move painting recognition.
-- [`phone-photo-augmentation`](experiments/phone-photo-augmentation/README.md) — simulated
+- [`phone-photo-augmentation`](experiments-v2/phone-photo-augmentation/README.md) — simulated
   phone-camera artifacts (JPEG / blur / noise) as training augmentation: a clean negative result.
 
 Current status, all experiments, and every number live in **[`EXPERIMENTS.md`](EXPERIMENTS.md)**
-(the running lab notebook) and **[`experiments/`](experiments/README.md)** (per-experiment
+(the running lab notebook) and **[`experiments-v2/`](experiments-v2/README.md)** (per-experiment
 write-ups).
 
 ## The synthetic dataset
@@ -67,7 +65,7 @@ yet public). ⚠️ Known issue: one of the five camera rigs (`right upper`) fra
 | [`code/`](code/) | The upstream pipeline — contrastive training → descriptor extraction → kNN eval — lightly patched (CPU faiss on H100, torch 2.8 checkpoint loading) |
 | [`scripts/`](scripts/) | This fork's tooling: [`eval_fullgrid.py`](scripts/eval_fullgrid.py) (the canonical full-K×τ-grid eval), [`build_finetune_data.py`](scripts/build_finetune_data.py) (wires synthetic data into training), painting-subset and synthetic-retrieval evals |
 | [`slurm/`](slurm/) | Batch jobs for the PCSS Eagle cluster — [`train.slurm`](slurm/train.slurm) reproduces the paper's best model |
-| [`experiments/`](experiments/README.md) | Per-experiment write-ups; its README defines the task and the metrics once |
+| [`experiments-v2/`](experiments-v2/README.md) | Per-experiment write-ups (the canonical v2 set); its README defines the task, metrics, and protocol once |
 | [`EXPERIMENTS.md`](EXPERIMENTS.md) | Running lab notebook: status snapshot, exact commands, job ids, all results |
 | [`reference/`](reference/README.md) | LaTeX source of the original paper + a summary of the result tables to beat |
 | [`CLAUDE.md`](CLAUDE.md) | Working notes: HPC environment, storage policy, dataset layout and its gotchas |

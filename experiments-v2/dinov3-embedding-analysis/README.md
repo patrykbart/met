@@ -1,11 +1,11 @@
 # DINOv3 embedding analysis of the v2 synthetic dataset
 
-*v2 rerun of [`experiments/dinov3-embedding-analysis/`](../../experiments/dinov3-embedding-analysis/README.md):
+*v2 rerun of the v1 `dinov3-embedding-analysis` experiment:
 push every image through the **same frozen DINOv3 ViT-L** (CLS token, aspect512 preprocessing) and ask
 what makes two images land near each other — painting identity, camera angle, or the random scene
 settings — and how far the renders sit from real photos. Model, preprocessing, real reference clouds,
 and methodology are **identical to v1; only the renders change.** Terms (chance, enrichment,
-linear-probe, silhouette, t-SNE/UMAP) are defined in the v1 doc. (Lab notebook:
+linear-probe, silhouette, t-SNE/UMAP) are standard embedding-analysis measures. (Lab notebook:
 [`EXPERIMENTS.md` → EXP-11](../../EXPERIMENTS.md); v1 = EXP-7.)*
 
 Three image sets: **synthetic** = the 24,490 v2 renders (4,898 paintings × 5 arc views), **studio** =

@@ -7,9 +7,9 @@ synthetic v2**, **all synthetic v2** — and test every model on the **same real
 with the **exact two protocols** of `real-vs-synthetic-mix` (closed painting world + full Met
 benchmark), against a **frozen zero-shot** baseline. This is the DINOv3 analogue of that experiment's
 three reference points (100:0 real, 0:100 budget-synth, synth-all). Run twice — once reading out the
-**CLS token** (the representation that reproduced the DINOv3 paper, [EXP-6](../../experiments/dinov3-backbone/README.md)),
+**CLS token** (the representation that reproduced the DINOv3 paper, [EXP-6](../../EXPERIMENTS.md)),
 once reading out **mean-pooled patch tokens** — because the answer flips between them. Metric
-definitions (GAP / GAP⁻ / ACC) are in the [v1 experiments README](../../experiments/README.md). Lab
+definitions (GAP / GAP⁻ / ACC) are in the [experiments-v2 README](../README.md). Lab
 notebook: [`EXPERIMENTS.md` → EXP-15](../../EXPERIMENTS.md).*
 
 ## TL;DR

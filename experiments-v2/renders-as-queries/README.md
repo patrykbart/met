@@ -1,6 +1,6 @@
 # Can the Met model recognize the v2 gallery renders?
 
-*v2 rerun of [`experiments/renders-as-queries/`](../../experiments/renders-as-queries/README.md):
+*v2 rerun of the v1 `renders-as-queries` experiment:
 the recognition model trained **only on the original Met data** (zero synthetic exposure), with the
 **24,490 v2 renders as queries**, against the **full 397k Met benchmark** and the **paintings-only**
 database — scored exactly like v1 (GAP / GAP⁻ / ACC + recall@k, per camera view). Protocol, model

@@ -1,6 +1,6 @@
 # Real vs synthetic training data, with the v2 renders
 
-*v2 rerun of [`experiments/real-vs-synthetic-mix/`](../../experiments/real-vs-synthetic-mix/README.md):
+*v2 rerun of the v1 `real-vs-synthetic-mix` experiment:
 train the painting recognizer on **real:synthetic blends at a fixed 12,403-image budget**
 (100:0 → 0:100), plus the **synth-only data-scaling arm** (1× → 1.25× → 1.5× → all 24,490 renders),
 and test every model on the **same real painting photos** — the easy closed painting world and the
@@ -8,7 +8,7 @@ full 397k Met benchmark. Recipe, seeds, budgets, splits, and evaluation are **id
 the renders change** (the blend manifests reuse v1's shuffle seeds, so each v2 subset contains the
 same painting/view slots, re-rendered). The 100:0 point and the all-real references contain no
 synthetic data and are **reused from v1**. Protocol details, metric definitions, and the K/τ
-2-fold-CV scheme are in the v1 doc. (Lab notebook: [`EXPERIMENTS.md` → EXP-12](../../EXPERIMENTS.md);
+2-fold-CV scheme are unchanged from v1 (see [`EXPERIMENTS.md` → EXP-8](../../EXPERIMENTS.md)). (Lab notebook: [`EXPERIMENTS.md` → EXP-12](../../EXPERIMENTS.md);
 v1 = EXP-8.)*
 
 ## TL;DR

@@ -7,7 +7,7 @@ repeats **exactly that treatment** over controlled variants of the dataset to is
 ingredients* produce the gain, along three axes: **procedural environment randomization** (an
 ablation ladder), **render resolution** (512² vs 1024²), and **viewpoint count** (5 vs 3 vs 1 arc
 angles). Recipe, seeds, manifest construction, and both evaluations are identical across rows —
-only the renders change. Metric definitions and protocol: [v1 experiments README](../../experiments/README.md);
+only the renders change. Metric definitions and protocol: [experiments-v2 README](../README.md);
 lab notebook: [`EXPERIMENTS.md` → EXP-14](../../EXPERIMENTS.md).*
 
 ## TL;DR

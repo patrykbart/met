@@ -13,9 +13,12 @@ MET    = "/mnt/storage_6/project_data/pl0896-03/met-dataset"
 V2_1024 = "/mnt/storage_6/project_data/pl0896-03/visart-dataset-v2-1024"
 OUT    = os.path.join(REPO, "figures/teaser/proposals"); os.makedirs(OUT, exist_ok=True)
 ANGLE  = "30"
+START  = int(os.environ.get("START", "0")); N = 10        # candidate slice [START:START+N]
 
-cand = json.load(open(os.path.join(REPO, "data/teaser/candidates.json")))[:10]
+allc = json.load(open(os.path.join(REPO, "data/teaser/candidates.json")))
+cand = allc[START:START + N]
 want = {c["met_id"] for c in cand}
+TAG  = f"{START + 1}-{START + len(cand)}"
 
 # met_id -> 1024 render folder (independent set; scan metadata)
 fol_of = {}
@@ -32,7 +35,7 @@ for c in cand:
     fol = fol_of[c["met_id"]]
     render = glob.glob(os.path.join(V2_1024, fol, f"*_rgb_{ANGLE}.png"))[0]
     rows.append({**c, "render1024": render})
-json.dump(rows, open(os.path.join(OUT, "manifest.json"), "w"), indent=1)
+json.dump(rows, open(os.path.join(OUT, f"manifest_{TAG}.json"), "w"), indent=1)
 
 # --- montage -------------------------------------------------------------------------
 TH, GUT, PAD, HEAD = 248, 320, 14, 60
@@ -62,7 +65,7 @@ def wrap(d, t, fnt, maxw):
 W = GUT + 3*TH + 4*PAD
 H = HEAD + len(rows)*(TH+PAD) + PAD
 canvas = Image.new("RGB", (W, H), "white"); d = ImageDraw.Draw(canvas)
-d.text((PAD, 12), "Teaser proposals — full-frame 1024² renders (angle 30°, no zoom). Pick a MET id.",
+d.text((PAD, 12), f"Teaser proposals {TAG} — full-frame 1024² renders (angle 30°, no zoom). Pick a MET id.",
        font=fonth, fill="black")
 for ci, t in enumerate(COLS):
     d.text((GUT+PAD+ci*(TH+PAD), HEAD-22), t, font=fontb, fill=(20, 20, 90))
@@ -76,5 +79,5 @@ for ri, c in enumerate(rows):
             d.text((PAD, ty), ln, font=font, fill=(90, 90, 90)); ty += 19
     for ci, key in enumerate(("train", "render1024", "photo")):
         canvas.paste(thumb(c[key]), (GUT+PAD+ci*(TH+PAD), y))
-canvas.save(os.path.join(OUT, "proposal_1024_30deg.jpg"), quality=90)
-print("saved", os.path.join(OUT, "proposal_1024_30deg.jpg"), canvas.size)
+canvas.save(os.path.join(OUT, f"proposal_1024_30deg_{TAG}.jpg"), quality=90)
+print("saved", os.path.join(OUT, f"proposal_1024_30deg_{TAG}.jpg"), canvas.size)

@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Status (2026-10-25): this repo is a record.** The SynGallery paper was accepted at VISART 2026 and its
+> reproduction code is [SynGallery/syngallery-bench](https://github.com/SynGallery/syngallery-bench). Grant
+> `pl0896-03` has expired (every SLURM submission is rejected with `AssocMaxSubmitJobLimit`), and the paths
+> below under `/mnt/storage_6/project_data/pl0896-03/` (`met`, `met-dataset`, `visart-dataset`) no longer
+> exist. To run anything on Eagle now, follow the research vault's `compute/README.md`: GPU jobs charge
+> `pl1373-01` on partition `proxima`, CPU jobs charge `pl0896-01`.
+
 ## Overview
 
 Official code for **The Met dataset** (NeurIPS paper) — instance-level recognition / image retrieval over ~224k classes of museum exhibits. The pipeline trains a CNN embedding model with contrastive learning, extracts global descriptors, and classifies query images against the training set with a non-parametric kNN classifier. There is no build system, test suite, or linter config — this is a research codebase.

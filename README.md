@@ -68,7 +68,7 @@ yet public). ⚠️ Known issue: one of the five camera rigs (`right upper`) fra
 | [`experiments-v2/`](experiments-v2/README.md) | Per-experiment write-ups (the canonical v2 set); its README defines the task, metrics, and protocol once |
 | [`EXPERIMENTS.md`](EXPERIMENTS.md) | Running lab notebook: status snapshot, exact commands, job ids, all results |
 | [`reference/`](reference/README.md) | LaTeX source of the original paper + a summary of the result tables to beat |
-| [`CLAUDE.md`](CLAUDE.md) | Working notes: HPC environment, storage policy, dataset layout and its gotchas |
+| [`AGENTS.md`](AGENTS.md) | Working notes: HPC environment, storage policy, dataset layout and its gotchas |
 | `data/` | Git-ignored symlinks to the datasets plus generated models/descriptors |
 
 ## Running the code
@@ -76,7 +76,7 @@ yet public). ⚠️ Known issue: one of the five camera rigs (`right upper`) fra
 Everything runs as **Python modules from the repo root** (`python -m code.examples.…`, absolute
 imports) inside a repo-local `.venv` — on this cluster, always via SLURM. The proven environment
 recipe (Python 3.9 venv, torch 2.8 cu128, faiss — and why faiss runs on CPU here) is in
-[`EXPERIMENTS.md`](EXPERIMENTS.md) → Environment and [`CLAUDE.md`](CLAUDE.md).
+[`EXPERIMENTS.md`](EXPERIMENTS.md) → Environment and [`AGENTS.md`](AGENTS.md).
 
 ```bash
 # 1) Train the paper's best single model (R18-SWSL, con-syn+real-closest pairs)
@@ -103,7 +103,7 @@ sbatch slurm/train.slurm
 > (details in [`EXPERIMENTS.md`](EXPERIMENTS.md)).
 
 The Met dataset itself comes from the [official webpage](http://cmp.felk.cvut.cz/met/) and is wired
-in via the git-ignored `data/images` / `data/ground_truth` symlinks — [`CLAUDE.md`](CLAUDE.md) →
+in via the git-ignored `data/images` / `data/ground_truth` symlinks — [`AGENTS.md`](AGENTS.md) →
 Dataset documents the layout and the `images/` path gotcha.
 
 ## Upstream & citation

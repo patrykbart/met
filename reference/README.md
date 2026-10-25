@@ -35,7 +35,7 @@ single image). **Query images** are visitor photos of exhibits (a distribution s
 studio training set) plus two kinds of **distractors** (other-artwork and non-artwork) that are
 out-of-distribution and labeled `-1`. The method of choice is a **non-parametric kNN classifier**
 over L2-normalized global descriptors from a fine-tuned backbone; it beats parametric classifiers,
-especially on the long tail. See [../CLAUDE.md](../CLAUDE.md) for how this maps onto the code.
+especially on the long tail. See [../AGENTS.md](../AGENTS.md) for how this maps onto the code.
 
 **Metrics:** ACC (Met queries only), GAP⁻ = GAP on Met queries only, GAP = Global Average
 Precision (a.k.a. μAP) over *all* queries — rewards giving distractors lower confidence than true
@@ -172,4 +172,4 @@ exactly that gap. Concrete hooks from a full read of the paper:
 When extending the code or writing up results, compare against the tables above — primarily
 **R18-SWSL Con-Syn+Real-closest, GAP 36.1** (single model), while being aware of the **~38 GAP**
 concatenation ceiling — and reuse this paper's task definition, metrics, and protocol. See the
-project notes in `CLAUDE.md`.
+project notes in `AGENTS.md`.

@@ -47,7 +47,7 @@ All eval'd identically: multi-scale descriptors, **original 397k studio DB**, re
 
 ## Data
 
-- **Met dataset** (downloaded): `/mnt/storage_6/project_data/pl0896-03/met-dataset` (397,121 train / 224,408 classes; test 19,319 = 1,003 Met + 10,352 other-art + 7,964 non-art; val 2,165). Wired via git-ignored symlinks `data/images`, `data/ground_truth`. Full layout/schema in `CLAUDE.md` → "Dataset".
+- **Met dataset** (downloaded): `/mnt/storage_6/project_data/pl0896-03/met-dataset` (397,121 train / 224,408 classes; test 19,319 = 1,003 Met + 10,352 other-art + 7,964 non-art; val 2,165). Wired via git-ignored symlinks `data/images`, `data/ground_truth`. Full layout/schema in `AGENTS.md` → "Dataset".
 - **Painting test set (committed):** `Classification == "Paintings"` (exact) = **4,898** dataset classes and **148** of the 1,003 Met test queries (`data/gt_paint/testset.json`) — the single painting definition used project-wide. The exact field excludes painted *objects* (snuffboxes, miniatures) while keeping Asian-format scrolls/fans. **Val has only 1 painting query** → can't tune k,τ on val (reuse the full-set K=7, τ=50). `scripts/count_paintings.py`.
 
 ### Synthetic dataset (the VISART contribution)

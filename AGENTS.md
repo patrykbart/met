@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to coding agents (Claude Code, Codex, Gemini CLI) when working with code in this repository.
+This file provides guidance to coding agents (Claude Code, Codex, Antigravity CLI) when working with code in this repository.
 
 > **Status (2026-10-25): this repo is a record.** The SynGallery paper was accepted at VISART 2026 and its
 > reproduction code is [SynGallery/syngallery-bench](https://github.com/SynGallery/syngallery-bench). Grant
